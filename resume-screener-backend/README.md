@@ -66,23 +66,6 @@ This project solves that by:
 
 ---
 
-## 📁 Folder Structure (Modular & Scalable)
-
-src/
-├── auth/ # Auth logic (login, register, guard, strategy)
-│ ├── dto/
-│ ├── guards/
-│ └── strategies/
-├── user/ # User entity + protected /me route
-├── resume/ # Resume upload (WIP)
-├── job-description/ # Job description input (WIP)
-├── analysis/ # AI-powered comparison (WIP)
-├── rewrite/ # Resume rewriting logic (WIP)
-├── shared/ # Common utilities, decorators
-
-
----
-
 ## 🛠️ Getting Started
 
 ### ✅ Prerequisites
@@ -92,9 +75,8 @@ src/
 - MySQL client (Workbench/Postico/etc.)
 - `.env` file with JWT secret
 
----
 
-### 🔧 1. Clone the Repository
+### 🔧 Clone the Repository
 
 ```bash
 git clone https://github.com/your-username/ai-resume-backend.git
@@ -103,8 +85,3 @@ npm install
 docker-compose up -d
 npm run start:dev
 ```
-
-### 👨‍💻 Author
-[Your Name] – Full Stack Engineer
-Focused on backend architecture, scalable systems, and AI integration.
-
