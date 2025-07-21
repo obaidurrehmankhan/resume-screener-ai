@@ -51,3 +51,22 @@ All built with modern tech and clean UX, this MVP is ready to evolve into a full
 | ☁️ Infra Ready | Designed to support future deployment on Vercel + Supabase/AWS |
 
 ---
+
+
+
+### 📌 Next Features (Coming Soon)
+🔄 Refresh token strategy
+
+📄 Resume parsing + skill extraction
+
+🧠 GPT-4 match scoring
+
+✨ One-click AI resume rewrite
+
+🧰 Admin dashboard for managing users
+
+📈 Metrics, logging, and analytics
+
+### 📬 Feedback / Collaboration
+Have an idea or feedback? Want to collaborate?
+Reach out via GitHub or [obaid.techguy@example.com]
