@@ -25,8 +25,8 @@ export const Navbar = () => {
                                 key={link.path}
                                 to={link.path}
                                 className={`transition hover:text-primary ${pathname === link.path
-                                        ? "text-primary font-semibold"
-                                        : "text-muted-foreground"
+                                    ? "text-primary font-semibold"
+                                    : "text-muted-foreground"
                                     }`}
                             >
                                 {link.label}
@@ -37,10 +37,11 @@ export const Navbar = () => {
                     {/* Login Button */}
                     <Link
                         to="/login"
-                        className="hidden md:inline-flex px-4 py-2 text-sm rounded-md border border-border hover:bg-muted hover:text-foreground transition-colors"
+                        className="hidden md:inline-flex px-4 py-2 text-sm rounded-md border border-border dark:border-white hover:bg-muted hover:text-foreground transition-colors"
                     >
                         Login
                     </Link>
+
 
                     {/* Register Button */}
                     <Link

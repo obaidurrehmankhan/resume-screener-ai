@@ -1,24 +1,41 @@
 import { Link } from "react-router-dom";
 import { Container } from "@/components/layout/Container";
+import {
+    CheckCircle,
+    Lightbulb,
+    FileText,
+} from "lucide-react";
+import resumeIllustration from "@/assets/ai-resume-illustration.png";
 
 export default function LandingScreen() {
     return (
         <div className="bg-background text-foreground transition-colors duration-300">
             {/* Hero */}
             <section className="py-24">
-                <Container className="text-center max-w-3xl">
-                    <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground mb-4">
-                        AI-Powered Resume Screener
-                    </h1>
-                    <p className="text-lg text-muted-foreground mb-6">
-                        Instantly analyze your resume and get job-specific feedback.
-                    </p>
-                    <Link
-                        to="/register"
-                        className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-xl shadow hover:opacity-90 transition"
-                    >
-                        Get Started
-                    </Link>
+                <Container className="flex flex-col-reverse lg:flex-row items-center justify-between gap-12">
+                    <div className="text-center lg:text-left max-w-xl">
+                        <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground mb-4">
+                            AI-Powered Resume Screener
+                        </h1>
+                        <p className="text-lg text-muted-foreground mb-6">
+                            Instantly analyze your resume and get job-specific feedback to boost your chances.
+                        </p>
+                        <Link
+                            to="/register"
+                            className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-xl shadow hover:opacity-90 transition"
+                        >
+                            Get Started
+                        </Link>
+                    </div>
+
+                    {/* 🖼️ Hero illustration (Replace with actual SVG later) */}
+                    <div className="max-w-md w-full">
+                        <img
+                            src={resumeIllustration} // Place your SVG here
+                            alt="AI analyzing resume"
+                            className="w-full h-auto"
+                        />
+                    </div>
                 </Container>
             </section>
 
@@ -26,19 +43,19 @@ export default function LandingScreen() {
             <section className="py-20 bg-muted text-muted-foreground">
                 <Container className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FeatureCard
-                        icon="✅"
+                        icon={<CheckCircle className="w-8 h-8 text-primary" />}
                         title="Match Score"
-                        description="View how well you match a job description"
+                        description="View how well your resume matches a job description"
                     />
                     <FeatureCard
-                        icon="💡"
+                        icon={<Lightbulb className="w-8 h-8 text-primary" />}
                         title="AI Feedback"
-                        description="Discover areas for resume improvement"
+                        description="Get actionable tips to improve your resume instantly"
                     />
                     <FeatureCard
-                        icon="📄"
-                        title="Resume rewriting"
-                        description="Generate an updated resume with AI"
+                        icon={<FileText className="w-8 h-8 text-primary" />}
+                        title="Resume Rewriting"
+                        description="Generate an updated, keyword-rich resume with AI"
                     />
                 </Container>
             </section>
@@ -52,7 +69,7 @@ export default function LandingScreen() {
                     </p>
                     <Link
                         to="/register"
-                        className="inline-block bg-background text-primary px-6 py-3 rounded-xl shadow hover:opacity-90 transition"
+                        className="inline-block bg-background text-primary dark:text-white px-6 py-3 rounded-xl shadow hover:opacity-90 transition"
                     >
                         Start for Free
                     </Link>
@@ -67,13 +84,13 @@ const FeatureCard = ({
     title,
     description,
 }: {
-    icon: string;
+    icon: React.ReactNode;
     title: string;
     description: string;
 }) => {
     return (
         <div className="p-6 rounded-xl bg-card text-card-foreground shadow hover:shadow-md transition">
-            <div className="text-3xl mb-4">{icon}</div>
+            <div className="mb-4">{icon}</div>
             <h3 className="text-xl font-semibold mb-2">{title}</h3>
             <p className="text-sm text-muted-foreground">{description}</p>
         </div>
