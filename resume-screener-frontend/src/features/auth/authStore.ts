@@ -1,7 +1,7 @@
-
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { isTokenExpired } from '@/utils/jwt'
+import { getMeEndpoint } from './authApi'
 
 /**
  * Define the structure of the user object returned by the backend (/me).
@@ -15,7 +15,7 @@ export interface User {
 /**
  * Define the shape of the Zustand auth store:
  * - Holds JWT token and user
- * - Includes login, logout, and setUser actions
+ * - Includes login, logout, setUser, and initializeAuth actions
  */
 interface AuthState {
     user: User | null
@@ -23,6 +23,10 @@ interface AuthState {
     login: (token: string) => void
     setUser: (user: User) => void
     logout: () => void
+    initializeAuth?: (store: {
+        dispatch: any
+        getState: () => unknown
+    }) => Promise<void>
 }
 
 /**
@@ -59,6 +63,40 @@ export const useAuthStore = create<AuthState>()(
              */
             logout: () => {
                 set({ user: null, token: null })
+                localStorage.removeItem('auth-storage')
+            },
+
+            /**
+             * Initializes Zustand state on app load:
+             * - Rehydrates token from localStorage
+             * - Verifies token is valid
+             * - Fetches user via RTK's internal `getMe` call
+             */
+            initializeAuth: async (store) => {
+                const stored = JSON.parse(localStorage.getItem('auth-storage') || '{}')
+                const token = stored?.state?.token
+
+                if (!token || isTokenExpired(token)) {
+                    get().logout()
+                    return
+                }
+
+                set({ token })
+
+                try {
+                    const result = await getMeEndpoint.initiate(undefined, {
+                        forceRefetch: true,
+                    })(store.dispatch, store.getState, undefined)
+
+                    if ('data' in result) {
+                        set({ user: result.data })
+                    } else {
+                        get().logout()
+                    }
+                } catch (err) {
+                    console.error('initializeAuth failed:', err)
+                    get().logout()
+                }
             },
         }),
         {

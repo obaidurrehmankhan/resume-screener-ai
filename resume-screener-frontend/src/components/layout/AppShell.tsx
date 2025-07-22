@@ -1,28 +1,29 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/features/auth/authStore'
-import { useGetMeQuery } from '@/features/auth/authApi'
+import { store } from '@/lib/store' // Your Redux store
 import { Outlet } from 'react-router-dom'
-import { Navbar } from "./Navbar";
-import { Footer } from "./Footer";
+import { Navbar } from './Navbar'
+import { Footer } from './Footer'
 import { Toaster } from 'sonner'
 
 export const AppShell = () => {
-    const { token, user, setUser, logout } = useAuthStore()
-
-    // Call /me only if token exists and user is not yet loaded
-    const { data, error, isSuccess } = useGetMeQuery(undefined, {
-        skip: !token || !!user,
-    })
+    const initializeAuth = useAuthStore((state) => state.initializeAuth)
+    const [isAuthChecked, setIsAuthChecked] = useState(false)
 
     useEffect(() => {
-        if (isSuccess && data) {
-            setUser(data)
+        const hydrate = async () => {
+            if (initializeAuth) {
+                await initializeAuth(store)
+            }
+            setIsAuthChecked(true)
         }
 
-        if (error && 'status' in error && error.status === 401) {
-            logout()
-        }
-    }, [data, error, isSuccess, setUser, logout])
+        hydrate()
+    }, [initializeAuth])
+
+    if (!isAuthChecked) {
+        return <div className="p-4">Loading...</div>
+    }
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground transition-colors">
@@ -34,7 +35,6 @@ export const AppShell = () => {
             <Footer />
         </div>
     )
-};
-
+}
 
 export default AppShell

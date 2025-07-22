@@ -16,8 +16,8 @@ export const authApi = api.injectEndpoints({
          * - Returns: { token }
          */
         login: builder.mutation<
-            { token: string },                  // Response
-            { email: string; password: string } // Request
+            { token: string },
+            { email: string; password: string }
         >({
             query: (body) => ({
                 url: '/auth/login',
@@ -33,13 +33,13 @@ export const authApi = api.injectEndpoints({
          * - Returns: { token }
          */
         register: builder.mutation<
-            { token: string }, // Response
+            { token: string },
             {
                 name: string
                 profession: string
                 email: string
                 password: string
-            } // Request
+            }
         >({
             query: (body) => ({
                 url: '/auth/register',
@@ -62,6 +62,8 @@ export const authApi = api.injectEndpoints({
 
 export const {
     useLoginMutation,
-    useRegisterMutation, // ✅ Exported for register screen
+    useRegisterMutation,
     useGetMeQuery,
 } = authApi
+
+export const getMeEndpoint = authApi.endpoints.getMe
