@@ -13,8 +13,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
         TypeOrmModule.forFeature([User]), // Inject User repo
         JwtModule.register({
             secret: process.env.JWT_SECRET || 'supersecretkey',
-            signOptions: { expiresIn: '7d' },
-        }),
+            signOptions: { expiresIn: '1h' },
+        })
     ],
     controllers: [AuthController],
     providers: [AuthService, JwtStrategy, JwtAuthGuard],

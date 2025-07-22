@@ -1,47 +1,98 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+// src/auth/auth.service.ts
 
-import { User } from '../user/user.entity';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import {
+    Injectable,
+    UnauthorizedException,
+    ConflictException,
+} from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
+import * as bcrypt from 'bcrypt'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { User } from '../user/user.entity'
+import { RegisterDto } from './dto/register.dto'
+import { LoginDto } from './dto/login.dto'
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectRepository(User)
         private readonly userRepo: Repository<User>,
-        private readonly jwtService: JwtService,
+        private readonly jwtService: JwtService
     ) { }
 
+    /**
+     * Handles user registration:
+     * - Hashes password
+     * - Saves user to DB
+     * - Returns JWT token with 1-hour expiration
+     */
     async register(dto: RegisterDto): Promise<{ token: string }> {
-        const { email, password, name, profession } = dto;
+        const { email, password, name, profession } = dto
 
-        const existing = await this.userRepo.findOne({ where: { email } });
-        if (existing) throw new ConflictException('Email already in use');
+        // Check if email already exists
+        const existing = await this.userRepo.findOne({ where: { email } })
+        if (existing) throw new ConflictException('Email already in use')
 
-        const hashed = await bcrypt.hash(password, 10);
+        // Hash password
+        const hashed = await bcrypt.hash(password, 10)
 
-        const user = this.userRepo.create({ email, name, password: hashed, profession });
-        await this.userRepo.save(user);
+        // Create and save new user
+        const user = this.userRepo.create({
+            email,
+            name,
+            password: hashed,
+            profession,
+        })
+        await this.userRepo.save(user)
 
-        const token = this.jwtService.sign({ sub: user.id });
+        // Sign token with expiration (1 hour)
+        const token = this.jwtService.sign(
+            { sub: user.id },
+            { expiresIn: '1h' } // ⏰ Add exp field to token
+        )
 
-        return { token };
+        return { token }
     }
 
+    /**
+     * Handles login:
+     * - Verifies user credentials
+     * - Returns JWT token with 1-hour expiration
+     */
     async login(dto: LoginDto): Promise<{ token: string }> {
-        const user = await this.userRepo.findOne({ where: { email: dto.email } });
+        const user = await this.userRepo.findOne({ where: { email: dto.email } })
 
-        if (!user) throw new UnauthorizedException('Invalid credentials');
 
-        const match = await bcrypt.compare(dto.password, user.password);
-        if (!match) throw new UnauthorizedException('Invalid credentials');
+        if (!user) throw new UnauthorizedException('Invalid credentials')
 
-        const token = this.jwtService.sign({ sub: user.id });
+        // Compare input password with hashed password
+        const match = await bcrypt.compare(dto.password, user.password)
+        if (!match) throw new UnauthorizedException('Invalid credentials')
 
-        return { token };
+        // Sign token with expiration (1 hour)
+        const token = this.jwtService.sign(
+            { sub: user.id },
+            { expiresIn: '1h' } // ⏰ Add exp field to token
+        )
+
+        return { token }
     }
+
+    /**
+     * Retrieves the current logged-in user by ID.
+     * This is used by the /auth/me endpoint after decoding the JWT token.
+     * 
+     * @param userId - The ID of the authenticated user (extracted from the token's "sub" claim)
+     * @returns The user object with only public fields (id, email, name)
+     */
+    async getMe(userId: number) {
+        const user = await this.userRepo.findOne({
+            where: { id: userId },
+            select: ['id', 'email', 'name'], // ✅ Only public fields
+        })
+
+        return user
+    }
+
 }
