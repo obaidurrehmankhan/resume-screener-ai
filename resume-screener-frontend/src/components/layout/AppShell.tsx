@@ -4,6 +4,7 @@ import { useGetMeQuery } from '@/features/auth/authApi'
 import { Outlet } from 'react-router-dom'
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
+import { Toaster } from 'sonner'
 
 export const AppShell = () => {
     const { token, user, setUser, logout } = useAuthStore()
@@ -27,6 +28,7 @@ export const AppShell = () => {
         <div className="flex min-h-screen flex-col bg-background text-foreground transition-colors">
             <Navbar />
             <main className="flex-1">
+                <Toaster position="top-right" theme="system" />
                 <Outlet />
             </main>
             <Footer />

@@ -7,6 +7,16 @@
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+body {
+  @apply font-sans text-base bg-background text-foreground;
+}
+
+h1,
+h2,
+h3 {
+  @apply font-brand;
+}
+
 /* Typography Enhancements */
 h1,
 h2,

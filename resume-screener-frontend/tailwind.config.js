@@ -1,7 +1,7 @@
-/** @type {import('tailwindcss').Config} */
-import animate from 'tailwindcss-animate';
+import animate from 'tailwindcss-animate'
+import { type Config } from 'tailwindcss'
 
-export default {
+const config: Config = {
 	darkMode: 'class',
 	content: [
 		'./index.html',
@@ -9,10 +9,14 @@ export default {
 	],
 	theme: {
 		extend: {
+			fontFamily: {
+				brand: ['"Space Grotesk"', 'sans-serif'],
+				// you can override default too if needed:
+				// sans: ['"Space Grotesk"', 'ui-sans-serif', 'system-ui'],
+			},
 			colors: {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
-
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))',
@@ -40,8 +44,6 @@ export default {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
-
-				// Optional branding
 				crimson: {
 					DEFAULT: '#991b1b',
 					light: '#f87171',
@@ -59,4 +61,6 @@ export default {
 		},
 	},
 	plugins: [animate],
-};
+}
+
+export default config
