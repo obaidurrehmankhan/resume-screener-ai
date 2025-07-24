@@ -1,34 +1,45 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useLoginMutation } from '@/features/auth/authApi'
-import { useAuthStore } from '@/features/auth/authStore'
+import { useLoginMutation, authApi } from '@/features/auth/authApi'
+import { useDispatch } from 'react-redux'
+import { setToken, setUser } from '@/features/auth/authSlice'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { store } from '@/app/store'
 
 const LoginScreen = () => {
+    // 🎯 Form state for controlled inputs
     const [form, setForm] = useState({
         email: '',
         password: '',
     })
 
+    // ⚠️ Field-level validation error state
     const [fieldErrors, setFieldErrors] = useState<Partial<typeof form>>({})
+
+    // 👁 Toggle password visibility
     const [showPassword, setShowPassword] = useState(false)
 
     const navigate = useNavigate()
-    const { login } = useAuthStore()
+    const dispatch = useDispatch()
+
+    // 🔗 RTK Query login mutation
     const [triggerLogin, { isLoading }] = useLoginMutation()
 
+    // 📌 Handle form input change
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
         setForm((prev) => ({ ...prev, [name]: value }))
-        setFieldErrors((prev) => ({ ...prev, [name]: '' }))
+        setFieldErrors((prev) => ({ ...prev, [name]: '' })) // clear error on change
     }
 
+    // ✅ Handle form submission
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        // 🔍 Client-side validation
         const errors: Partial<typeof form> = {}
         if (!form.email.includes('@')) {
             errors.email = 'Enter a valid email'
@@ -43,11 +54,22 @@ const LoginScreen = () => {
         }
 
         try {
-            const res = await triggerLogin(form).unwrap()
-            login(res.token)
+            // 🔐 Login API call (POST /auth/login)
+            const { token } = await triggerLogin(form).unwrap()
+
+            // ✅ Persist token in Redux + localStorage
+            dispatch(setToken(token))
+
+            // 🔄 Immediately fetch user data (GET /auth/me)
+            const meResponse: any = await store.dispatch(authApi.endpoints.getMe.initiate())
+            if ('data' in meResponse) {
+                dispatch(setUser(meResponse.data)) // Save user to store
+            }
+
+            // 🎉 Redirect to dashboard
             navigate('/dashboard')
-        } catch (err) {
-            toast.error('Invalid credentials')
+        } catch (err: any) {
+            toast.error('Invalid credentials') // Handle failure
         }
     }
 
@@ -58,6 +80,7 @@ const LoginScreen = () => {
                 onSubmit={handleSubmit}
                 className="w-full max-w-md space-y-6 p-8 border border-border rounded-xl shadow-lg bg-muted/50 dark:bg-white/5 backdrop-blur-md transition-all duration-300"
             >
+                {/* 🔒 Title */}
                 <div className="text-center">
                     <h2 className="text-2xl font-bold tracking-tight text-primary mb-1">
                         Login to ScanHire AI
@@ -67,7 +90,7 @@ const LoginScreen = () => {
                     </p>
                 </div>
 
-                {/* Email */}
+                {/* 📧 Email Field */}
                 <div>
                     <label htmlFor="email" className="block mb-1 text-sm font-medium text-foreground">
                         Email
@@ -81,10 +104,12 @@ const LoginScreen = () => {
                         onChange={handleChange}
                         className="bg-muted/20 border border-border dark:border-white/10 focus-visible:ring-2 focus-visible:ring-primary transition-all"
                     />
-                    {fieldErrors.email && <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>}
+                    {fieldErrors.email && (
+                        <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+                    )}
                 </div>
 
-                {/* Password */}
+                {/* 🔐 Password Field */}
                 <div>
                     <label htmlFor="password" className="block mb-1 text-sm font-medium text-foreground">
                         Password
@@ -107,10 +132,12 @@ const LoginScreen = () => {
                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                     </div>
-                    {fieldErrors.password && <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>}
+                    {fieldErrors.password && (
+                        <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
+                    )}
                 </div>
 
-                {/* Submit */}
+                {/* 🚀 Submit Button */}
                 <Button
                     type="submit"
                     className="w-full hover:scale-[1.02] transition-transform duration-300"
@@ -118,6 +145,8 @@ const LoginScreen = () => {
                 >
                     {isLoading ? 'Logging in...' : 'Login'}
                 </Button>
+
+                {/* 🔗 Register Redirect */}
                 <p className="text-sm text-center text-muted-foreground">
                     Don’t have an account?{' '}
                     <Link
@@ -127,9 +156,7 @@ const LoginScreen = () => {
                         Create one
                     </Link>
                 </p>
-
             </form>
-
         </div>
     )
 }

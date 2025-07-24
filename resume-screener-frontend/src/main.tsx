@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/lib/ThemeProvider";
 import App from "./App";
 import "./index.css"; // tailwind styles
 import { Provider } from 'react-redux'
-import { store } from './lib/store'
+import { store } from '@/app/store'
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
