@@ -19,6 +19,8 @@ import { UserModule } from './user/user.module';
         database: config.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
+        retryAttempts: 10,
+        retryDelay: 3000,
       }),
     }),
     AuthModule,

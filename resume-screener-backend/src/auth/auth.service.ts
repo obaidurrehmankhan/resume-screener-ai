@@ -4,6 +4,7 @@ import {
     Injectable,
     UnauthorizedException,
     ConflictException,
+    BadRequestException,
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcrypt'
@@ -12,6 +13,7 @@ import { Repository } from 'typeorm'
 import { User } from '../user/user.entity'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
+import { UserRole } from '../common/enums/user-role.enum'
 
 @Injectable()
 export class AuthService {
@@ -93,6 +95,27 @@ export class AuthService {
         })
 
         return user
+    }
+
+
+    async createAdmin(userDto: RegisterDto, creator: User) {
+        if (creator.role !== UserRole.ADMIN) {
+            throw new UnauthorizedException('Only admin can create another admin');
+        }
+
+        const existing = await this.userRepo.findOneBy({ email: userDto.email });
+        if (existing) throw new BadRequestException('Email already exists');
+
+        const hashed = await bcrypt.hash(userDto.password, 10);
+        const user = this.userRepo.create({
+            ...userDto,
+            password: hashed,
+            role: UserRole.ADMIN,
+        });
+
+        const saved = await this.userRepo.save(user);
+        const { password, ...result } = saved;
+        return result;
     }
 
 }

@@ -4,6 +4,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Request } from 'express'
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -27,6 +28,12 @@ export class AuthController {
     getMe(@Req() req: Request) {
         const userId = req.user?.sub;
         return this.authService.getMe(userId)
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('create-admin')
+    createAdmin(@Body() dto: RegisterDto, @Req() req) {
+        return this.authService.createAdmin(dto, req.user);
     }
 
 }

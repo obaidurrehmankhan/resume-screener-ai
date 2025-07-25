@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   mysql:
     image: mysql:8
@@ -5,10 +7,10 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: rootpass # ✅ Required
-      MYSQL_DATABASE: resume_db # ✅ Optional but useful
-      MYSQL_USER: resume_user # ✅ Non-root user
-      MYSQL_PASSWORD: resume_pass # ✅ Password for that user
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: resume_db
+      MYSQL_USER: resume_user
+      MYSQL_PASSWORD: resume_pass
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
