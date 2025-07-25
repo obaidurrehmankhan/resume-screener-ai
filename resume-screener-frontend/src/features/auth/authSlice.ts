@@ -8,7 +8,8 @@ interface AuthState {
     user: {
         id: number
         name: string
-        email: string
+        email: string,
+        role: string
     } | null
 }
 

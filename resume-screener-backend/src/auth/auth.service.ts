@@ -91,7 +91,7 @@ export class AuthService {
     async getMe(userId: number) {
         const user = await this.userRepo.findOne({
             where: { id: userId },
-            select: ['id', 'email', 'name'], // ✅ Only public fields
+            select: ['id', 'email', 'name', 'role'],
         })
 
         return user

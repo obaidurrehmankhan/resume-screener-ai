@@ -39,7 +39,7 @@ const LoginScreen = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        // 🔍 Client-side validation
+        // 🔍 Basic client-side validation
         const errors: Partial<typeof form> = {}
         if (!form.email.includes('@')) {
             errors.email = 'Enter a valid email'
@@ -48,30 +48,41 @@ const LoginScreen = () => {
             errors.password = 'Password must be at least 6 characters'
         }
 
+        // ⚠️ Show validation errors if any
         if (Object.keys(errors).length > 0) {
             setFieldErrors(errors)
             return
         }
 
         try {
-            // 🔐 Login API call (POST /auth/login)
+            // 🔐 Step 1: Call login API → returns JWT token
             const { token } = await triggerLogin(form).unwrap()
 
-            // ✅ Persist token in Redux + localStorage
+            // ✅ Step 2: Save token to Redux store (and localStorage internally)
             dispatch(setToken(token))
 
-            // 🔄 Immediately fetch user data (GET /auth/me)
+            // 🔄 Step 3: Immediately fetch user info using token
             const meResponse: any = await store.dispatch(authApi.endpoints.getMe.initiate())
-            if ('data' in meResponse) {
-                dispatch(setUser(meResponse.data)) // Save user to store
-            }
 
-            // 🎉 Redirect to dashboard
-            navigate('/dashboard')
+            if ('data' in meResponse) {
+                const currentUser = meResponse.data
+
+                // 🧠 Step 4: Save user info to Redux store
+                dispatch(setUser(currentUser))
+
+                // 🚦 Step 5: Redirect based on role
+                if (currentUser.role === 'admin') {
+                    navigate('/admin') // 🧭 Admin panel
+                } else {
+                    navigate('/dashboard') // 🧭 Regular user dashboard
+                }
+            }
         } catch (err: any) {
-            toast.error('Invalid credentials') // Handle failure
+            // ❌ Show toast error for failed login
+            toast.error('Invalid credentials')
         }
     }
+
 
     return (
         <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4 transition-colors duration-300">

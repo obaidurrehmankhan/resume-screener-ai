@@ -1,10 +1,8 @@
 // 📦 React hooks
 import { useEffect, useState } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 
-// 🧭 React Router: handles nested routing
-import { Outlet } from 'react-router-dom'
-
-// 🧠 Redux: read from and write to the Redux store
+// 🧠 Redux hooks & store
 import { useDispatch, useSelector } from 'react-redux'
 import { store } from '@/app/store'
 
@@ -15,57 +13,45 @@ import { Footer } from './Footer'
 // 🔔 Toast notifications
 import { Toaster } from 'sonner'
 
-// 🌐 RTK Query endpoint to fetch user details
+// 🌐 RTK Query: hydrate user
 import { authApi } from '@/features/auth/authApi'
-
-// 🔐 Redux action to set user data
 import { setUser } from '@/features/auth/authSlice'
-
-// 🔤 For typed useSelector usage
 import type { RootState } from '@/app/store'
 
-// 🧩 AppShell: The layout wrapper for all pages
-export const AppShell = () => {
+// 🧩 AppShell: Global wrapper for all routes
+const AppShell = () => {
     const dispatch = useDispatch()
+    const location = useLocation()
 
-    // ✅ Auth check flag to avoid rendering app until token is validated
     const [isAuthChecked, setIsAuthChecked] = useState(false)
-
-    // 🔐 Get token from Redux store to check if user might be logged in
     const token = useSelector((state: RootState) => state.auth.token)
 
-    // 🔁 On app load (or token change), check if session is valid
+    // 🌍 Determine whether to show full Footer
+    const hideFooterFor = ['/dashboard', '/dashboard/', '/admin', '/admin/']
+    const isDashboardOrAdmin = hideFooterFor.some(path => location.pathname.startsWith(path))
+
     useEffect(() => {
         const hydrateAuth = async () => {
             if (token) {
                 try {
-                    // 🧠 Call the `/auth/me` endpoint manually
-                    const result: any = await store.dispatch(
-                        authApi.endpoints.getMe.initiate()
-                    )
-
-                    // ✅ If successful, store user in Redux
+                    const result: any = await store.dispatch(authApi.endpoints.getMe.initiate())
                     if ('data' in result) {
                         dispatch(setUser(result.data))
                     }
-                } catch (error) {
-                    console.error('Auth hydration failed:', error)
+                } catch (err) {
+                    console.error('❌ Auth hydration failed', err)
                 }
             }
-
-            // 🏁 Mark auth check as complete so app can render
             setIsAuthChecked(true)
         }
 
         hydrateAuth()
     }, [dispatch, token])
 
-    // ⏳ Don't render anything until auth check is complete
     if (!isAuthChecked) {
-        return <div className="p-4">Loading...</div>
+        return <div className="p-4 text-muted-foreground">Loading...</div>
     }
 
-    // ✅ Once ready, show the app layout with nav, content, footer
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground transition-colors">
             <Navbar />
@@ -73,7 +59,9 @@ export const AppShell = () => {
                 <Toaster position="top-right" theme="system" />
                 <Outlet />
             </main>
-            <Footer />
+
+            {/* 🦶 Conditionally render footer */}
+            {!isDashboardOrAdmin && <Footer />}
         </div>
     )
 }
