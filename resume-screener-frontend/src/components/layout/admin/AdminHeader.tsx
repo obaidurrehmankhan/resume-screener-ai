@@ -1,10 +1,37 @@
-// 📘 AdminHeader: Optional top bar for admin insights
+// 🛠 AdminHeader with responsive collapse support
 
-export const AdminHeader = () => {
+import { Menu } from 'lucide-react'
+
+
+type AdminHeaderProps = {
+    onToggleSidebar: () => void
+}
+
+export const AdminHeader = ({ onToggleSidebar }: AdminHeaderProps) => {
+
     return (
-        <header className="mb-6 border-b pb-2">
-            <h1 className="text-2xl font-semibold tracking-tight">Admin Panel</h1>
-            <p className="text-muted-foreground text-sm">Manage users, insights, and site-wide settings.</p>
+        <header className="mb-6 flex items-center justify-between border-b pb-2">
+            {/* 🍔 Hamburger (mobile only) */}
+            <button
+                className="md:hidden text-muted-foreground hover:text-primary transition"
+                onClick={onToggleSidebar}
+                aria-label="Toggle Sidebar"
+            >
+                <Menu size={24} />
+            </button>
+
+            {/* 🧑‍💼 Admin Info */}
+            <div>
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                    Admin Panel
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                    Manage users, insights, and site-wide settings.
+                </p>
+            </div>
+
+            {/* 🔒 Future admin actions placeholder */}
+            <div className="hidden md:block">{/* e.g. Settings icon, filters, etc. */}</div>
         </header>
     )
 }
