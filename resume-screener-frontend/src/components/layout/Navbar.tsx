@@ -1,20 +1,28 @@
-// 📦 React Router hooks
+// 📦 React Router & Redux hooks
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-
-// 🧠 Redux hooks
 import { useDispatch, useSelector } from 'react-redux'
 
 // 🔐 Logout action
 import { logout } from '@/features/auth/authSlice'
 
-// 🎨 UI Components
-import { Button } from '@/components/ui/button'
+// 🎨 UI Components & Radix Dropdown
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+
+// 🔤 Icons
+import { LogOut, User, ChevronDown } from 'lucide-react'
 
 // 🧠 Typed Redux access
 import type { RootState } from '@/app/store'
 
-// 📌 Navbar: Role-aware global top bar
 export const Navbar = () => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
@@ -29,7 +37,6 @@ export const Navbar = () => {
         navigate('/login')
     }
 
-    // 🌐 Guest-only links
     const publicLinks = [
         { label: 'How It Works', path: '/how-it-works' },
         { label: 'Pricing', path: '/pricing' },
@@ -38,29 +45,26 @@ export const Navbar = () => {
     ]
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-border backdrop-blur bg-background/80 supports-[backdrop-filter]:bg-background/60 text-foreground shadow-sm dark:shadow-[0_1px_6px_rgba(255,255,255,0.06)] transition-all duration-300">
+        <header className="sticky top-0 z-50 w-full border-b border-border backdrop-blur bg-background/80 supports-[backdrop-filter]:bg-background/60 text-foreground shadow-sm transition-all duration-300">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-                {/* 🔷 Brand */}
+                {/* 🔷 Brand Logo */}
                 <Link
                     to="/"
-                    className="text-2xl font-bold text-primary font-brand tracking-tight transition-all duration-300"
+                    className="text-2xl font-bold text-primary font-brand tracking-tight"
                 >
                     ScanHire AI
                 </Link>
 
-                {/* 🔗 Links + Actions */}
+                {/* 🔗 Right-side actions */}
                 <div className="flex items-center gap-4">
-                    {/* 👥 Show nav links only for guests */}
+                    {/* 🌐 Guest nav links */}
                     {role === 'guest' && (
                         <nav className="hidden md:flex gap-6 text-sm font-medium">
                             {publicLinks.map((link) => (
                                 <Link
                                     key={link.path}
                                     to={link.path}
-                                    className={`transition-all duration-300 hover:text-primary ${pathname === link.path
-                                        ? 'text-primary font-semibold'
-                                        : 'text-muted-foreground'
-                                        }`}
+                                    className={`transition-all hover:text-primary ${pathname === link.path ? 'text-primary font-semibold' : 'text-muted-foreground'}`}
                                 >
                                     {link.label}
                                 </Link>
@@ -68,45 +72,79 @@ export const Navbar = () => {
                         </nav>
                     )}
 
-                    {/* 🔐 Authenticated user */}
-                    {isAuthenticated && user ? (
-                        <>
-                            {/* 👤 User Pill */}
-                            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-muted/50 text-sm font-medium text-foreground/80 dark:bg-white/5 transition-all duration-300">
-                                <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold">
-                                    {user.name?.[0] || 'U'}
-                                </div>
-                                <span className="truncate max-w-[100px]">{user.name}</span>
-                            </div>
+                    {/* 🌗 Theme toggle */}
+                    <ThemeToggle />
 
-                            {/* 🚪 Logout */}
-                            <Button
-                                onClick={handleLogout}
-                                className="px-4 py-2 rounded-md text-sm font-medium bg-muted/40 text-foreground hover:bg-muted/60 dark:hover:bg-white/10 transition-all duration-300"
+                    {/* 👤 Authenticated user dropdown */}
+                    {isAuthenticated && user ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-accent text-accent-foreground hover:bg-accent/80 transition-all shadow-sm"
+                                >
+                                    {/* 🧑 Avatar circle */}
+                                    <Avatar className="h-6 w-6">
+                                        <AvatarFallback className="bg-primary text-white text-xs">
+                                            {user.name?.[0] ?? 'U'}
+                                        </AvatarFallback>
+                                    </Avatar>
+
+                                    {/* 📝 Name */}
+                                    <span className="max-w-[100px] truncate text-foreground">
+                                        {user.name}
+                                    </span>
+
+                                    {/* ⬇️ Down caret */}
+                                    <ChevronDown size={16} className="text-muted-foreground" />
+                                </button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent
+                                align="end"
+                                className="w-48 z-[9999] bg-background border shadow-lg rounded-md"
                             >
-                                Logout
-                            </Button>
-                        </>
+                                {/* 🔖 Header */}
+                                <DropdownMenuLabel className="text-xs text-muted-foreground px-3 pt-2">
+                                    My Account
+                                </DropdownMenuLabel>
+
+                                <DropdownMenuSeparator />
+
+                                {/* 👤 Profile link */}
+                                <DropdownMenuItem
+                                    onClick={() => navigate('/dashboard/profile')}
+                                    className="cursor-pointer hover:bg-muted/80 focus:bg-muted/80 focus:outline-none text-foreground"
+                                >
+                                    <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    My Profile
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem
+                                    onClick={handleLogout}
+                                    className="cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-muted/80 focus:bg-muted/80 focus:outline-none"
+                                >
+                                    <LogOut className="mr-2 h-4 w-4 text-destructive" />
+                                    Logout
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     ) : (
+                        // 🚪 Guest auth buttons
                         <>
-                            {/* 🚪 Guest login/register */}
                             <Link
                                 to="/login"
-                                className="hidden md:inline-flex px-4 py-2 text-sm rounded-md border border-border dark:border-white hover:bg-muted hover:text-foreground transition-all duration-300"
+                                className="hidden md:inline-flex px-4 py-2 text-sm rounded-md border border-border hover:bg-muted hover:text-foreground transition-all"
                             >
                                 Login
                             </Link>
                             <Link
                                 to="/register"
-                                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md shadow-sm hover:opacity-90 hover:scale-[1.02] transition-all duration-300"
+                                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md shadow-sm hover:opacity-90 hover:scale-[1.02] transition-all"
                             >
                                 Get Started
                             </Link>
                         </>
                     )}
-
-                    {/* 🌗 Theme toggle */}
-                    <ThemeToggle />
                 </div>
             </div>
         </header>
