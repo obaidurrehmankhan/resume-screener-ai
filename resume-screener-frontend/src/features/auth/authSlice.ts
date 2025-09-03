@@ -41,6 +41,13 @@ const authSlice = createSlice({
             state.token = null
             state.user = null
             localStorage.removeItem('token') // ❌ Clear token from storage
+            // Clear any cached data
+            localStorage.clear() // Clear all localStorage data
+            sessionStorage.clear() // Clear all sessionStorage data
+            // Import and use resetAuthState
+            import('./authUtils').then(module => {
+                module.resetAuthState()
+            })
         },
     },
 })

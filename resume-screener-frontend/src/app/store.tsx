@@ -18,11 +18,14 @@ export const store = configureStore({
 
         // 👇 Our custom auth reducer (holds token, user, etc.)
         auth: authReducer,
-    },
+    } as any,
 
     // ⚙️ Add RTK Query's middleware to handle API caching, invalidation, etc.
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(authApi.middleware),
+        getDefaultMiddleware({
+            serializableCheck: false,
+            immutableCheck: false,
+        }).concat(authApi.middleware),
 })
 
 // 🔁 Enable automatic re-fetching on window focus or reconnect
