@@ -1,0 +1,35 @@
+.ProseMirror {
+    min-height: 200px;
+    outline: none;
+}
+
+.ProseMirror>*+* {
+    margin-top: 0.75em;
+}
+
+/* Placeholder (TipTap mark) */
+.ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: #adb5bd;
+    pointer-events: none;
+    height: 0;
+}
+
+/* Optional: nicer blockquote + hr */
+.ProseMirror blockquote {
+    border-left: 3px solid crimson;
+    margin: 1em 0;
+    padding-left: 1em;
+    font-style: italic;
+}
+
+.ProseMirror hr {
+    border: none;
+    border-top: 2px solid #e5e5e5;
+    margin: 2em 0;
+}
+
+.dark .ProseMirror hr {
+    border-top-color: #4a4a4a;
+}

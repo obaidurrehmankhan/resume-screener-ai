@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import AiFeedbackPanel from '@/components/shared/AiFeedbackPanel'
-import SlateEditorInput from '@/components/slateEditor/SlateEditorInput'
-import type { Descendant } from 'slate'
 import {
     Select,
     SelectTrigger,
@@ -12,22 +10,13 @@ import {
     SelectItem,
 } from '@/components/ui/select'
 import { RefreshCcw, Save, ScanSearch } from 'lucide-react'
+import RichTextEditor from '@/components/rich-text-editor'
 
 const tones = ['Formal', 'Casual', 'Friendly']
 
 export default function RewriteScreen() {
     const navigate = useNavigate()
     const [selectedTone, setSelectedTone] = useState('Formal')
-    const [editorValue, setEditorValue] = useState<Descendant[]>([
-        {
-            type: 'paragraph',
-            children: [
-                {
-                    text: 'Experienced software engineer with a strong background in full-stack development...',
-                },
-            ],
-        },
-    ])
 
     const [dummySuggestions] = useState({
         matchScore: 72,
@@ -57,25 +46,11 @@ export default function RewriteScreen() {
         },
     })
 
-    useEffect(() => {
-        setEditorValue([
-            {
-                type: 'paragraph',
-                children: [
-                    {
-                        text: 'Experienced software engineer with a strong background in full-stack development. Successfully led projects, enhancing system performance by 50%. Proficient in React, Python, and AWS. Adaptable team player with excellent problem-solving abilities and a commitment to continuous improvement.',
-                    },
-                ],
-            },
-        ])
-    }, [])
-
     const handleRegenerate = () => {
         console.log(`Regenerating with tone: ${selectedTone}`)
     }
 
     const handleSaveDraft = () => {
-        console.log('Draft saved:', editorValue)
     }
 
     const handleCheckATS = () => {
@@ -98,14 +73,11 @@ export default function RewriteScreen() {
                         <h3 className="text-lg font-semibold text-zinc-700 dark:text-zinc-200">
                             AI-Rewritten Resume
                         </h3>
-                        <SlateEditorInput
-                            value={editorValue}
-                            onChange={setEditorValue}
-                            placeholder="Start editing your improved resume here..."
-                        />
+
                     </div>
 
                     {/* Tone + Regenerate */}
+                    <RichTextEditor />
                     {/* Tone + Regenerate */}
                     <div className="flex flex-wrap items-center gap-3 pt-2">
                         <Select onValueChange={setSelectedTone} defaultValue={selectedTone}>
