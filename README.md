@@ -88,17 +88,15 @@ Most resumes are **misaligned** with the Job Description (JD): missing keywords,
 
 ## 🗺️ Architecture
 
-```mermaid
-flowchart LR
-  A[Browser (React at Vercel)] -- HTTPS --> B[NestJS API at Railway/Render]
-  B --> C[(Supabase PostgreSQL)]
-  B --> D[[OpenAI GPT-4]]
-```
+  - A[Browser (React at Vercel)] -- HTTPS --> B[NestJS API at Railway/Render]
+  - B --> C[(Supabase PostgreSQL)]
+  - B --> D[[OpenAI GPT-4]]
+
 ---
 
 ## 🔁 Core Flows
 
-### Guest (no login)
+**Guest (no login)**
 
 - /upload → paste/upload resume + JD
 
@@ -106,7 +104,7 @@ flowchart LR
 
 - Upgrade CTA → login/signup → attach guest draft to user → redirect to /rewrite/:draftId
 
-### User
+**User**
 
 - /upload → upload/paste → Create draft
 
@@ -122,23 +120,23 @@ flowchart LR
 
 ## 🚀 Deployment Plan
 
-### Frontend: Vercel (React SPA)
+***Frontend**: Vercel (React SPA)
 
 - VITE_API_BASE_URL=https://api.yourdomain.com
 
-### API: Railway or Render (Docker)
+**API**: Railway or Render (Docker)
 
 - ENV: DATABASE_URL, JWT_SECRET, OPENAI_API_KEY, CORS_ORIGIN
 
 - Run TypeORM migrations on startup
 
-### DB: Supabase PostgreSQL
+**DB**: Supabase PostgreSQL
 
 - Primary branch + connection pooling
 
-### CORS: allow only your Vercel domain(s)
+**CORS**: allow only your Vercel domain(s)
 
-### HTTPS: managed by Vercel + Railway/Render
+**HTTPS**: managed by Vercel + Railway/Render
 
 ---
 
