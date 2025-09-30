@@ -90,11 +90,11 @@ Most resumes are **misaligned** with the Job Description (JD): missing keywords,
 
 ```mermaid
 flowchart LR
-  A[Browser (React @ Vercel)] -- HTTPS --> B[NestJS API @ Railway/Render]
+  A[Browser (React at Vercel)] -- HTTPS --> B[NestJS API at Railway/Render]
   B --> C[(Supabase PostgreSQL)]
   B --> D[[OpenAI GPT-4]]
 ```
-
+---
 
 ## 🔁 Core Flows
 
@@ -118,6 +118,7 @@ flowchart LR
 
 - Dashboard → history list, open, delete (soft)
 
+---
 
 ## 🚀 Deployment Plan
 
@@ -139,6 +140,7 @@ flowchart LR
 
 ### HTTPS: managed by Vercel + Railway/Render
 
+---
 
 ## Contributing / Contact
 
