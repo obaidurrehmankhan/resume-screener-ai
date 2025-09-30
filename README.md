@@ -58,7 +58,7 @@ Most resumes are **misaligned** with the Job Description (JD): missing keywords,
 | AI       | **OpenAI (GPT-4)** for analysis & rewrite; **Cohere** later (similarity/classification) |
 | Auth     | **JWT** (access), protected routes, **autosave on 401** |
 | Ops      | Throttling (Nest Throttler), DTO validation, soft delete |
-| Deploy   | **Vercel (frontend)** + **Railway/Render (API)** + **Neon (Postgres)** |
+| Deploy   | **Vercel (frontend)** + **Railway/Render (API)** + **Supabase (Postgres)** |
 | Docs     | **Swagger** at `/docs` (Bearer auth), schemas & examples |
 
 ---
@@ -81,7 +81,7 @@ Most resumes are **misaligned** with the Job Description (JD): missing keywords,
 - **Swagger docs** with examples  
 - **Deployment** (Vercel + Railway/Render + Supabase)
 
-**Future (post Oct 15)**
+**Future MVPs**
 - Downloads (PDF/DOCX), pricing/billing, multi-tenancy, recruiter workspace
 
 ---
