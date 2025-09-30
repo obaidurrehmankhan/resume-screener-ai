@@ -1,72 +1,147 @@
 # 🧠 Resume Screener AI – Full Stack MVP
 
-AI-Powered Resume Screener & Rewriter — built as a full-stack, production-grade MVP to demonstrate **AI integration**, **scalable architecture**, and **real-world SaaS readiness**.
+Production-minded **AI Resume Screener & Rewriter** that showcases **real AI integration**, **clean architecture**, a **guest → signup funnel**, and **SaaS readiness**.
+
+<p align="left">
+  <a href="#tech-stack"><img alt="Stack" src="https://img.shields.io/badge/Frontend-React%2018%20%7C%20RTK%20Query%20%7C%20Tailwind-blue"></a>
+  <a href="#tech-stack"><img alt="Backend" src="https://img.shields.io/badge/Backend-NestJS%20%7C%20TypeORM%20%7C%20PostgreSQL-green"></a>
+  <a href="#api-docs-swagger"><img alt="Docs" src="https://img.shields.io/badge/API%20Docs-Swagger-brightgreen"></a>
+  <a href="#deployment-plan"><img alt="Deploy" src="https://img.shields.io/badge/Deploy-Vercel%20%7C%20Railway%20%7C%20Neon-purple"></a>
+</p>
 
 ---
 
-## 🔍 Problem Statement
-
-Job seekers often apply with **generic or misaligned resumes** that fail to match the job description (JD). Recruiters quickly discard these due to:
-
-- Missing keywords and core skills
-- Poor formatting or irrelevant experience
-- ATS-unfriendly structure
-- No personalization for the role
-
----
-
-## 🎯 Our Solution
-
-**Resume Screener AI** allows users to upload a resume and a job description. Then it uses **GPT-4 and Cohere** to:
-
-✅ **Compare Resume vs Job Description**  
-✅ **Score the match** (e.g., 76%)  
-✅ **Highlight missing skills, tools, job titles**  
-✅ **Suggest improvements**  
-✅ **Rewrite the resume** in one click  
-✅ **Check ATS compatibility**
-
-All built with modern tech and clean UX, this MVP is ready to evolve into a full SaaS product.
+## 📚 Table of Contents
+- [Problem](#-problem)
+- [Solution](#-solution)
+- [What We’re Offering](#-what-were-offering)
+- [Tech Stack](#-tech-stack)
+- [Status](#-status)
+- [Architecture](#-architecture)
+- [Core Flows](#-core-flows)
+- [Deployment Plan](#-deployment-plan)
+- [AI Concepts Covered](#-ai-concepts-covered)
+- [Contributing / Contact](#-contributing--contact)
 
 ---
 
-## 📌 Project Goals
+## 🔍 Problem
+Most resumes are **misaligned** with the Job Description (JD): missing keywords, weak structure, and ATS issues. Recruiters skim and discard quickly; candidates don’t know what to fix.
 
-| Phase | Goal |
-|-------|------|
-| ✅ MVP | Upload resume + JD → Compare → Score → Rewrite |
-| 🔜 Next | Add login, user dashboard, saved resumes, export PDF |
-| 🧠 Future | Recruiter view, multi-resume tracking, fine-tuned AI models |
+---
+
+## 🎯 Solution
+**Resume Screener AI** lets users (and **guests**) paste or upload a resume + JD, then uses AI to:
+
+- **Score the match** (e.g., 76%)
+- **Highlight gaps** (skills, tools, titles)
+- **Provide actionable suggestions**
+- **Rewrite the resume** in one click (logged-in users)
+- **Check ATS compatibility** (prompt-assisted)
+- **Throttle/regenerate** to control cost
+- **Autosave** drafts (incl. on token expiry)
+
+---
+
+## 👥 What We’re Offering
+- **Job seekers:** fast gap analysis, targeted rewrite, ATS-friendly output.
+- **Freelance/Agencies:** demo-ready app easily extended to multi-tenant orgs, pricing, exports.
+- **Recruiters (future):** multi-resume tracking, bulk scoring, team views.
 
 ---
 
 ## 🧱 Tech Stack
-
-| Layer | Tech |
-|-------|------|
-| 💻 Frontend | React, Vite, Tailwind CSS, shadcn/ui, Zustand, RTK Query |
-| 🧠 AI APIs | OpenAI GPT-4 (analysis + rewrite), Cohere (similarity, keywords) |
-| 🔧 Backend | Node.js, Express, MySQL, Sequelize, Multer |
-| 📁 Structure | Monorepo (frontend + backend in single GitHub repo) |
-| ☁️ Infra Ready | Designed to support future deployment on Vercel + Supabase/AWS |
+| Layer     | Tech |
+|----------|------|
+| Frontend | **React 18**, React Router, Tailwind CSS, **Redux Toolkit**, **RTK Query** |
+| Backend  | **NestJS**, **TypeORM**, **PostgreSQL** (JSONB) |
+| AI       | **OpenAI (GPT-4)** for analysis & rewrite; **Cohere** later (similarity/classification) |
+| Auth     | **JWT** (access), protected routes, **autosave on 401** |
+| Ops      | Throttling (Nest Throttler), DTO validation, soft delete |
+| Deploy   | **Vercel (frontend)** + **Railway/Render (API)** + **Neon (Postgres)** |
+| Docs     | **Swagger** at `/docs` (Bearer auth), schemas & examples |
 
 ---
 
+## ✅ Status
+
+**Done**
+- Admin/User dashboard scaffolds  
+- Upload screen UI (Resume+JD inputs, widgets)  
+- Rewrite screen UI (editor, regenerate, save draft)  
+- JWT auth wired (frontend + backend)  
+- Base folder/feature structure
+
+**In Progress**
+- **Guest mode**: `/upload` with **limited scoring** + upgrade CTA  
+- **Full analysis** (match %, ATS, section tips) for logged-in users  
+- **Rewrite**: v1 + **regenerate** (throttled + cooldown UI)  
+- **Autosave** (debounced & on 401)  
+- **History dashboard** (list/open/delete drafts)  
+- **Swagger docs** with examples  
+- **Deployment** (Vercel + Railway/Render + Supabase)
+
+**Future (post Oct 15)**
+- Downloads (PDF/DOCX), pricing/billing, multi-tenancy, recruiter workspace
+
+---
+
+## 🗺️ Architecture
+
+```mermaid
+flowchart LR
+  A[Browser (React @ Vercel)] -- HTTPS --> B[NestJS API @ Railway/Render]
+  B --> C[(Supabase PostgreSQL)]
+  B --> D[[OpenAI GPT-4]]
+```
 
 
-### 📌 Next Features (Coming Soon)
-🔄 Refresh token strategy
+## 🔁 Core Flows
 
-📄 Resume parsing + skill extraction
+### Guest (no login)
 
-🧠 GPT-4 match scoring
+- /upload → paste/upload resume + JD
 
-✨ One-click AI resume rewrite
+- Check Score → limited match score only
 
-🧰 Admin dashboard for managing users
+- Upgrade CTA → login/signup → attach guest draft to user → redirect to /rewrite/:draftId
 
-📈 Metrics, logging, and analytics
+### User
 
-### 📬 Feedback / Collaboration
-Have an idea or feedback? Want to collaborate?
-Reach out via GitHub or [obaid.techguy@example.com]
+- /upload → upload/paste → Create draft
+
+- Check Score → full analysis (match %, ATS, section tips)
+
+- Rewrite → v1 generated; Regenerate → v2, v3… (throttled)
+
+- Autosave while typing; on 401 do best-effort autosave before redirect
+
+- Dashboard → history list, open, delete (soft)
+
+
+## 🚀 Deployment Plan
+
+### Frontend: Vercel (React SPA)
+
+- VITE_API_BASE_URL=https://api.yourdomain.com
+
+### API: Railway or Render (Docker)
+
+- ENV: DATABASE_URL, JWT_SECRET, OPENAI_API_KEY, CORS_ORIGIN
+
+- Run TypeORM migrations on startup
+
+### DB: Supabase PostgreSQL
+
+- Primary branch + connection pooling
+
+### CORS: allow only your Vercel domain(s)
+
+### HTTPS: managed by Vercel + Railway/Render
+
+
+## Contributing / Contact
+
+Issues and PRs welcome.
+
+Contact: obaid.techguy@gmail.com
