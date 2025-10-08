@@ -4,7 +4,6 @@
 
 1. Start the PostgreSQL container:
 ```bash
-cd resume-screener-backend
 docker compose up -d
 ```
 
