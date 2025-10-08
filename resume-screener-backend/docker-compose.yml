@@ -1,6 +1,6 @@
 services:
-  postgres:
-    image: postgres:15
+  db:
+    image: postgres:16
     container_name: resume-postgres
     ports:
       - "5433:5432"
@@ -9,13 +9,19 @@ services:
       POSTGRES_USER: resume_user
       POSTGRES_PASSWORD: resume_pass
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U resume_user -d resume_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      - resume-network
+      - app-network
 
 volumes:
-  postgres_data:
+  pgdata:
 
 
 networks:
-  resume-network:
+  app-network:
+    driver: bridge

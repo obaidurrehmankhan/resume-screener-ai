@@ -19,7 +19,9 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "typeorm:migrate": "nest build && typeorm-ts-node-commonjs migration:run",
+    "typeorm:gen": "typeorm-ts-node-commonjs migration:generate -n"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -39,7 +41,8 @@
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.25"
+    "typeorm": "^0.3.25",
+    "typeorm-naming-strategies": "^4.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
