@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { HealthModule } from './health/health.module';
 import { dataSourceOptions } from './database/data-source';
+import { LoggerModule } from './common/logger/logger.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { dataSourceOptions } from './database/data-source';
     }),
     AuthModule,
     UserModule,
-    HealthModule
+    HealthModule,
+    LoggerModule,
   ],
 })
 export class AppModule { }

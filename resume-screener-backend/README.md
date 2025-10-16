@@ -85,3 +85,26 @@ npm install
 docker-compose up -d
 npm run start:dev
 ```
+
+---
+
+## ⚠️ Error Model
+
+All API errors are returned with a consistent structure to make handling on the client predictable:
+
+```json
+{
+  "success": false,
+  "code": 400,
+  "message": "Validation failed",
+  "details": [
+    "email must be an email"
+  ]
+}
+```
+
+- `code` is the HTTP status code for the response.
+- `message` provides a human-readable description of the problem.
+- `details` is optional and is primarily used for validation errors (e.g., field-level messages).
+
+Every response includes an `x-request-id` header that can be used to correlate API responses with server logs.
