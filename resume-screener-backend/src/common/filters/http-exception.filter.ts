@@ -29,7 +29,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
         ? (exception.getStatus() as HttpStatus)
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const { message, details } = this.extractMessageAndDetails(exception);
+    const { message: extractedMessage, details } =
+      this.extractMessageAndDetails(exception);
 
     const requestIdHeader =
       response.getHeader('x-request-id') ?? request.headers['x-request-id'];
@@ -37,8 +38,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
       ? requestIdHeader[0]
       : requestIdHeader;
 
-    if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
-      const errorMessage = message ?? 'Internal server error';
+    const isInternalError = status === HttpStatus.INTERNAL_SERVER_ERROR;
+    const responseMessage = isInternalError
+      ? 'Internal server error'
+      : extractedMessage ?? 'Internal server error';
+
+    if (isInternalError) {
+      const errorMessage = extractedMessage ?? 'Unknown error';
       const errorStack =
         exception instanceof Error ? exception.stack : undefined;
       this.logger.error(
@@ -47,15 +53,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
       );
     } else {
       this.logger.warn(
-        `${request.method} ${request.url} -> ${status} [${requestId ?? 'unknown-request'}]: ${message}`,
+        `${request.method} ${request.url} -> ${status} [${requestId ?? 'unknown-request'}]: ${extractedMessage}`,
       );
     }
 
     const responseBody: ErrorResponseBody = {
       success: false,
       code: status,
-      message: message ?? 'Internal server error',
-      ...(details !== undefined ? { details } : {}),
+      message: responseMessage,
+      ...(!isInternalError && details !== undefined ? { details } : {}),
     };
 
     response.status(status).json(responseBody);
