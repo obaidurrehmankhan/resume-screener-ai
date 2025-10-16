@@ -9,13 +9,13 @@ docker compose up -d
 
 2. Connection String:
 ```
-postgresql://appuser:apppass@localhost:5432/appdb
+postgresql://appuser:apppass@localhost:5433/appdb
 ```
 
 Or using environment variables:
 ```
 DB_HOST=localhost
-DB_PORT=5432
+DB_PORT=5433
 DB_USERNAME=appuser
 DB_PASSWORD=apppass
 DB_NAME=appdb

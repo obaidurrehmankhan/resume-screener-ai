@@ -14,7 +14,7 @@ export class Analysis {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ name: 'draft_id' })
+    @Column({ name: 'draft_id', type: 'uuid' })
     draftId: string;
 
     @Column({ name: 'match_score', type: 'float' })

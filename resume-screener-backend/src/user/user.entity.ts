@@ -1,15 +1,18 @@
 import { UserRole } from '../common/enums/user-role.enum';
+import { Draft } from '../database/entities/draft.entity';
 import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
     CreateDateColumn,
+    OneToMany,
+    UpdateDateColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity('users')
 export class User {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ length: 100 })
     name: string;
@@ -33,6 +36,13 @@ export class User {
     @Column({ default: true })
     isActive: boolean;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
+
+    @UpdateDateColumn({ type: 'timestamptz' })
+    updatedAt: Date;
+
+    // Relationships
+    @OneToMany(() => Draft, draft => draft.user)
+    drafts: Draft[];
 }

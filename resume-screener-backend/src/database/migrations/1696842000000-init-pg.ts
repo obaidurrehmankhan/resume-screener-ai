@@ -1,19 +1,19 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class InitPg1696842000000 implements MigrationInterface {
-    name = 'InitPg1696842000000';
+  name = 'InitPg1696842000000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // -------------------------------------------------------------
-        // Extensions (safe to re-run)
-        // -------------------------------------------------------------
-        await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
-        // await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // -------------------------------------------------------------
+    // Extensions (safe to re-run)
+    // -------------------------------------------------------------
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
+    // await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
 
-        // -------------------------------------------------------------
-        // Enums (idempotent via DO blocks)
-        // -------------------------------------------------------------
-        await queryRunner.query(`
+    // -------------------------------------------------------------
+    // Enums (idempotent via DO blocks)
+    // -------------------------------------------------------------
+    await queryRunner.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
@@ -25,7 +25,7 @@ export class InitPg1696842000000 implements MigrationInterface {
       END$$;
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
@@ -37,7 +37,7 @@ export class InitPg1696842000000 implements MigrationInterface {
       END$$;
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
@@ -49,14 +49,16 @@ export class InitPg1696842000000 implements MigrationInterface {
       END$$;
     `);
 
-        // -------------------------------------------------------------
-        // Tables
-        // -------------------------------------------------------------
-        await queryRunner.query(`
+    // -------------------------------------------------------------
+    // Tables
+    // -------------------------------------------------------------
+    await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "users" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "email" varchar NOT NULL,
-        "password_hash" varchar NOT NULL,
+        "password" varchar NOT NULL,
+        "name" varchar,
+        "profession" varchar,
         "role" "public"."user_role_enum" NOT NULL DEFAULT 'user',
         "created_at" timestamptz NOT NULL DEFAULT now(),
         "updated_at" timestamptz NOT NULL DEFAULT now(),
@@ -64,12 +66,12 @@ export class InitPg1696842000000 implements MigrationInterface {
       );
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS "ux_users_email_lower"
       ON "users"(lower(email));
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "drafts" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "user_id" uuid,
@@ -91,7 +93,7 @@ export class InitPg1696842000000 implements MigrationInterface {
       );
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "analyses" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "draft_id" uuid NOT NULL,
@@ -111,7 +113,7 @@ export class InitPg1696842000000 implements MigrationInterface {
       );
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "rewrites" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "draft_id" uuid NOT NULL,
@@ -127,7 +129,7 @@ export class InitPg1696842000000 implements MigrationInterface {
       );
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "files" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "user_id" uuid,
@@ -144,18 +146,18 @@ export class InitPg1696842000000 implements MigrationInterface {
       );
     `);
 
-        // -------------------------------------------------------------
-        // Indexes
-        // -------------------------------------------------------------
-        await queryRunner.query(`CREATE INDEX IF NOT EXISTS "idx_drafts_user_id" ON "drafts" ("user_id");`);
-        await queryRunner.query(`CREATE INDEX IF NOT EXISTS "idx_drafts_guest_session_id" ON "drafts" ("guest_session_id");`);
-        await queryRunner.query(`CREATE INDEX IF NOT EXISTS "idx_drafts_expires_at" ON "drafts" ("expires_at");`);
-        await queryRunner.query(`CREATE INDEX IF NOT EXISTS "idx_analyses_draft_id_created_at" ON "analyses" ("draft_id","created_at");`);
+    // -------------------------------------------------------------
+    // Indexes
+    // -------------------------------------------------------------
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "idx_drafts_user_id" ON "drafts" ("user_id");`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "idx_drafts_guest_session_id" ON "drafts" ("guest_session_id");`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "idx_drafts_expires_at" ON "drafts" ("expires_at");`);
+    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "idx_analyses_draft_id_created_at" ON "analyses" ("draft_id","created_at");`);
 
-        // -------------------------------------------------------------
-        // Trigger for updated_at (correct syntax)
-        // -------------------------------------------------------------
-        await queryRunner.query(`
+    // -------------------------------------------------------------
+    // Trigger for updated_at (correct syntax)
+    // -------------------------------------------------------------
+    await queryRunner.query(`
       CREATE OR REPLACE FUNCTION set_updated_at()
       RETURNS trigger AS $$
       BEGIN
@@ -165,8 +167,8 @@ export class InitPg1696842000000 implements MigrationInterface {
       $$ LANGUAGE plpgsql;
     `);
 
-        // Drop and recreate triggers safely
-        await queryRunner.query(`
+    // Drop and recreate triggers safely
+    await queryRunner.query(`
       DROP TRIGGER IF EXISTS set_updated_at_drafts ON "drafts";
       CREATE TRIGGER set_updated_at_drafts
       BEFORE UPDATE ON "drafts"
@@ -174,38 +176,38 @@ export class InitPg1696842000000 implements MigrationInterface {
       EXECUTE FUNCTION set_updated_at();
     `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
       DROP TRIGGER IF EXISTS set_updated_at_users ON "users";
       CREATE TRIGGER set_updated_at_users
       BEFORE UPDATE ON "users"
       FOR EACH ROW
       EXECUTE FUNCTION set_updated_at();
     `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        // Triggers
-        await queryRunner.query(`DROP TRIGGER IF EXISTS set_updated_at_drafts ON "drafts";`);
-        await queryRunner.query(`DROP TRIGGER IF EXISTS set_updated_at_users ON "users";`);
-        await queryRunner.query(`DROP FUNCTION IF EXISTS set_updated_at;`);
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // Triggers
+    await queryRunner.query(`DROP TRIGGER IF EXISTS set_updated_at_drafts ON "drafts";`);
+    await queryRunner.query(`DROP TRIGGER IF EXISTS set_updated_at_users ON "users";`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS set_updated_at;`);
 
-        // Indexes
-        await queryRunner.query(`DROP INDEX IF EXISTS "idx_analyses_draft_id_created_at";`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "idx_drafts_expires_at";`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "idx_drafts_guest_session_id";`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "idx_drafts_user_id";`);
-        await queryRunner.query(`DROP INDEX IF EXISTS "ux_users_email_lower";`);
+    // Indexes
+    await queryRunner.query(`DROP INDEX IF EXISTS "idx_analyses_draft_id_created_at";`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "idx_drafts_expires_at";`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "idx_drafts_guest_session_id";`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "idx_drafts_user_id";`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "ux_users_email_lower";`);
 
-        // Tables
-        await queryRunner.query(`DROP TABLE IF EXISTS "files";`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "rewrites";`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "analyses";`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "drafts";`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "users";`);
+    // Tables
+    await queryRunner.query(`DROP TABLE IF EXISTS "files";`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "rewrites";`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "analyses";`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "drafts";`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "users";`);
 
-        // Enums
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."file_kind_enum";`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."draft_status_enum";`);
-        await queryRunner.query(`DROP TYPE IF EXISTS "public"."user_role_enum";`);
-    }
+    // Enums
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."file_kind_enum";`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."draft_status_enum";`);
+    await queryRunner.query(`DROP TYPE IF EXISTS "public"."user_role_enum";`);
+  }
 }

@@ -1,7 +1,9 @@
+import { UserRole } from '../../common/enums/user-role.enum';
+
 export interface UserPayload {
-    sub: number
-    email?: string
-    role?: 'user' | 'admin'
-    iat?: number
-    exp?: number
+    sub: string;
+    email?: string;
+    role?: UserRole;
+    iat?: number;
+    exp?: number;
 }

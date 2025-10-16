@@ -8,11 +8,11 @@ import {
     OneToMany,
     Index
 } from 'typeorm';
-import { User } from './user.entity';
 // Make sure the file 'analysis.entity.ts' exists in the same directory as this file.
 // If the file is named differently (e.g., 'Analysis.entity.ts' or 'analysisEntity.ts'), update the import accordingly.
 import { Analysis } from './analysis.entity';
 import { Rewrite } from './rewrite.entity';
+import { User } from '../../user/user.entity';
 
 enum DraftStatus {
     DRAFT = 'draft',
@@ -27,7 +27,7 @@ export class Draft {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ name: 'user_id', nullable: true })
+    @Column({ name: 'user_id', type: 'uuid', nullable: true })
     userId?: string;
 
     @Column({ name: 'guest_session_id', nullable: true })

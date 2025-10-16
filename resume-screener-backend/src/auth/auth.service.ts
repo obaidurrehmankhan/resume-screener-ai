@@ -14,6 +14,7 @@ import { User } from '../user/user.entity'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
 import { UserRole } from '../common/enums/user-role.enum'
+import { UserPayload } from './types/user-payload'
 
 @Injectable()
 export class AuthService {
@@ -29,7 +30,7 @@ export class AuthService {
      * - Saves user to DB
      * - Returns JWT token with 1-hour expiration
      */
-    async register(dto: RegisterDto): Promise<{ token: string }> {
+    async register(dto: RegisterDto): Promise<{ token: string; user: Omit<User, 'password'> }> {
         const { email, password, name, profession } = dto
 
         // Check if email already exists
@@ -45,16 +46,19 @@ export class AuthService {
             name,
             password: hashed,
             profession,
+            role: UserRole.USER,
         })
-        await this.userRepo.save(user)
+        const savedUser = await this.userRepo.save(user)
 
         // Sign token with expiration (1 hour)
         const token = this.jwtService.sign(
-            { sub: user.id },
+            { sub: savedUser.id, email: savedUser.email, role: savedUser.role },
             { expiresIn: '1h' } // ⏰ Add exp field to token
         )
 
-        return { token }
+        const { password: _password, ...safeUser } = savedUser
+
+        return { token, user: safeUser as Omit<User, 'password'> }
     }
 
     /**
@@ -62,7 +66,7 @@ export class AuthService {
      * - Verifies user credentials
      * - Returns JWT token with 1-hour expiration
      */
-    async login(dto: LoginDto): Promise<{ token: string }> {
+    async login(dto: LoginDto): Promise<{ token: string; user: Omit<User, 'password'> }> {
         const user = await this.userRepo.findOne({ where: { email: dto.email } })
 
 
@@ -74,11 +78,13 @@ export class AuthService {
 
         // Sign token with expiration (1 hour)
         const token = this.jwtService.sign(
-            { sub: user.id },
+            { sub: user.id, email: user.email, role: user.role },
             { expiresIn: '1h' } // ⏰ Add exp field to token
         )
 
-        return { token }
+        const { password: _password, ...safeUser } = user
+
+        return { token, user: safeUser as Omit<User, 'password'> }
     }
 
     /**
@@ -88,7 +94,7 @@ export class AuthService {
      * @param userId - The ID of the authenticated user (extracted from the token's "sub" claim)
      * @returns The user object with only public fields (id, email, name)
      */
-    async getMe(userId: number) {
+    async getMe(userId: string) {
         const user = await this.userRepo.findOne({
             where: { id: userId },
             select: ['id', 'email', 'name', 'role'],
@@ -98,8 +104,8 @@ export class AuthService {
     }
 
 
-    async createAdmin(userDto: RegisterDto, creator: User) {
-        if (creator.role !== UserRole.ADMIN) {
+    async createAdmin(userDto: RegisterDto, creator: UserPayload) {
+        if (creator?.role !== UserRole.ADMIN) {
             throw new UnauthorizedException('Only admin can create another admin');
         }
 
