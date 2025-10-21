@@ -17,15 +17,18 @@ import { UserModule } from '../user/user.module';
         JwtModule.registerAsync({
             inject: [ConfigService],
             useFactory: (config: ConfigService) => {
-                const secret = config.get<string>('JWT_SECRET');
-                if (!secret) {
-                    throw new Error('JWT_SECRET environment variable is not set');
-                }
+                const secret =
+                    config.get<string>('JWT_ACCESS_SECRET') ??
+                    config.get<string>('JWT_SECRET') ??
+                    'supersecretkey';
+
+                const accessTtlMinutes =
+                    config.get<string>('ACCESS_TTL_MIN') ?? '15';
 
                 return {
                     secret,
                     signOptions: {
-                        expiresIn: config.get<string>('JWT_EXPIRY') || '1h'
+                        expiresIn: `${accessTtlMinutes}m`,
                     },
                 };
             },

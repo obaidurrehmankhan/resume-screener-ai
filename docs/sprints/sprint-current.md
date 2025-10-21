@@ -92,6 +92,8 @@
 * `/auth/logout` clears cookies.
 * `JwtStrategy` reads from **cookies**; `/auth/me` returns `{ user, plan, entitlements? }`.
 * Create **new guards/decorators** wherever required.
+* Make sure to add openAPI tags or attributes for documentation
+* Help me in testing these things on frontend (if required) and steps to test on backend with Postman
 
 **DoD:** Manual test: **login → refresh → logout**; cookies behave; **e2e happy-path** for refresh.
 
@@ -274,7 +276,7 @@
 * [D] P-101 Pino baseline
 * [D] P-102 Helmet + CORS + cookies
 * [D] P-103 OpenAPI
-* [ ] P-104 Cookie JWT flows
+* [D] P-104 Cookie JWT flows
 * [ ] P-107 Entities + migrations
 * [ ] P-116 Entitlements baseline
 * [ ] P-108 analysis.run worker

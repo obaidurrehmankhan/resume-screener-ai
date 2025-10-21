@@ -1,13 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import * as cookieParser from 'cookie-parser';
 import * as request from 'supertest';
 import { RegisterDto } from '../src/modules/auth/dto/register.dto';
 import { LoginDto } from '../src/modules/auth/dto/login.dto';
 import { TestModule } from './test.module';
 import { DataSource } from 'typeorm';
 
+type SupertestAgent = ReturnType<typeof request.agent>;
+
 describe('AuthController (e2e)', () => {
     let app: INestApplication;
+    let agent: SupertestAgent;
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -16,8 +20,10 @@ describe('AuthController (e2e)', () => {
 
         app = moduleFixture.createNestApplication();
         app.setGlobalPrefix('api');
-        app.useGlobalPipes(new ValidationPipe());
+        app.use(cookieParser());
+        app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
         await app.init();
+        agent = request.agent(app.getHttpServer());
     });
 
     afterAll(async () => {
@@ -40,15 +46,14 @@ describe('AuthController (e2e)', () => {
         };
 
         it('should register a new user', () => {
-            return request(app.getHttpServer())
+            return agent
                 .post('/api/auth/register')
                 .send(registerDto)
                 .expect(201)
                 .expect(res => {
-                    expect(res.body).toHaveProperty('token');
-                    expect(res.body.user).toHaveProperty('id');
-                    expect(res.body.user.email).toBe(registerDto.email);
-                    expect(res.body.user).not.toHaveProperty('password');
+                    expect(res.body).toHaveProperty('id');
+                    expect(res.body.email).toBe(registerDto.email);
+                    expect(res.body).not.toHaveProperty('password');
                 });
         });
 
@@ -73,18 +78,6 @@ describe('AuthController (e2e)', () => {
             password: 'Test123!'
         };
 
-        it('should login successfully', () => {
-            return request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send(loginDto)
-                .expect(200)
-                .expect(res => {
-                    expect(res.body).toHaveProperty('token');
-                    expect(res.body.user).toHaveProperty('id');
-                    expect(res.body.user.email).toBe(loginDto.email);
-                });
-        });
-
         it('should fail with wrong password', () => {
             return request(app.getHttpServer())
                 .post('/api/auth/login')
@@ -94,28 +87,45 @@ describe('AuthController (e2e)', () => {
     });
 
     describe('GET /auth/me', () => {
-        let token: string;
+        const loginDto: LoginDto = {
+            email: 'test@example.com',
+            password: 'Test123!',
+        };
 
         beforeAll(async () => {
-            const response = await request(app.getHttpServer())
+            await agent
                 .post('/api/auth/login')
-                .send({
-                    email: 'test@example.com',
-                    password: 'Test123!'
-                });
-            token = response.body.token;
+                .send(loginDto)
+                .expect(200);
         });
 
         it('should get current user profile', () => {
-            return request(app.getHttpServer())
+            return agent
                 .get('/api/auth/me')
-                .set('Authorization', `Bearer ${token}`)
                 .expect(200)
                 .expect(res => {
                     expect(res.body).toHaveProperty('id');
                     expect(res.body.email).toBe('test@example.com');
                     expect(res.body).not.toHaveProperty('password');
                 });
+        });
+
+        it('should refresh session and then logout', async () => {
+            const refreshRes = await agent
+                .post('/api/auth/refresh')
+                .expect(200);
+
+            expect(refreshRes.headers['set-cookie']).toEqual(
+                expect.arrayContaining([
+                    expect.stringContaining('access_token='),
+                    expect.stringContaining('refresh_token='),
+                ]),
+            );
+
+            await agent.post('/api/auth/logout').expect(204);
+            await agent.get('/api/auth/me').expect(401);
+
+            await agent.post('/api/auth/login').send(loginDto).expect(200);
         });
 
         it('should fail without token', () => {
@@ -127,7 +137,7 @@ describe('AuthController (e2e)', () => {
         it('should fail with invalid token', () => {
             return request(app.getHttpServer())
                 .get('/api/auth/me')
-                .set('Authorization', 'Bearer invalid')
+                .set('Cookie', 'access_token=invalid')
                 .expect(401);
         });
     });
