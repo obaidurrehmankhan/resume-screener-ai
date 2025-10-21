@@ -38,7 +38,7 @@
 
 ---
 
-### P-101 — Pino baseline (BE)
+### P-101 — Pino baseline (BE) - Done
 
 **Goal:** Add Pino request logging & error envelope with `requestId` (no PII).
 
@@ -321,7 +321,7 @@ Replace `P-XXX`:
 
 ```text
 Execute P-XXX from docs/sprints/prompts.md.
-- Read: project-brief.md, coding-standards.md, frontend-instructions.md, docs/README_BACKEND_INSTRUCTIONS.md.
+- Read: project-brief.md, coding-standards.md, frontend-instructions.md, backend-instructions.md.
 - Propose ≤5 steps, then show diffs before saving.
 - Keep PR ≤200 LOC, add one happy-path test.
 - Follow: cookies (HttpOnly), JSON envelope, Pino logs (no PII), BullMQ jobs return { jobId }.
