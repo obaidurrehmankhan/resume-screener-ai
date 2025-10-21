@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import { RegisterDto } from '../src/auth/dto/register.dto';
-import { LoginDto } from '../src/auth/dto/login.dto';
+import { RegisterDto } from '../src/modules/auth/dto/register.dto';
+import { LoginDto } from '../src/modules/auth/dto/login.dto';
 import { TestModule } from './test.module';
 import { DataSource } from 'typeorm';
 
