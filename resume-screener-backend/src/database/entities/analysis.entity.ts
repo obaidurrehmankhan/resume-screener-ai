@@ -1,41 +1,35 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    ManyToOne,
-    Index
-} from 'typeorm';
-import { Draft } from './draft.entity';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('analyses')
-@Index(['draftId', 'createdAt'])
+@Index('idx_analyses_draft_created', ['draftId', 'createdAt'])
 export class Analysis {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ name: 'draft_id', type: 'uuid' })
-    draftId: string;
+  @Column({ name: 'draft_id', type: 'uuid' })
+  draftId: string;
 
-    @Column({ name: 'match_score', type: 'float' })
-    matchScore: number;
+  @Column({ name: 'job_id', type: 'uuid', nullable: true })
+  jobId?: string;
 
-    @Column({ name: 'ats_score', type: 'float', nullable: true })
-    atsScore?: number;
+  @Column({ name: 'ats_score', type: 'int4' })
+  atsScore: number;
 
-    @Column({ name: 'suggestions_json', type: 'jsonb', nullable: true })
-    suggestionsJson?: Record<string, any>;
+  @Column({ name: 'match_score', type: 'int4', nullable: true })
+  matchScore?: number;
 
-    @Column()
-    model: string;
+  @Column({ name: 'missing_skills', type: 'text', array: true, nullable: true })
+  missingSkills?: string[];
 
-    @Column({ name: 'tokens_used' })
-    tokensUsed: number;
+  @Column({ name: 'panels_allowed', type: 'text', array: true, nullable: true })
+  panelsAllowed?: string[];
 
-    @CreateDateColumn({ type: 'timestamptz' })
-    createdAt: Date;
+  @Column({ name: 'parsing_meta', type: 'jsonb', nullable: true })
+  parsingMeta?: Record<string, unknown>;
 
-    // Relationships
-    @ManyToOne(() => Draft, draft => draft.analyses)
-    draft: Draft;
+  @Column({ name: 'keyword_hits', type: 'jsonb', nullable: true })
+  keywordHits?: Record<string, unknown>;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
 }

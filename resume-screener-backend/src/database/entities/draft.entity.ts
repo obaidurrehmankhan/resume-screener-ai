@@ -1,82 +1,72 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
-    OneToMany,
-    Index
-} from 'typeorm';
-// Make sure the file 'analysis.entity.ts' exists in the same directory as this file.
-// If the file is named differently (e.g., 'Analysis.entity.ts' or 'analysisEntity.ts'), update the import accordingly.
-import { Analysis } from './analysis.entity';
-import { Rewrite } from './rewrite.entity';
-import { User } from '../../modules/user/user.entity';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
-enum DraftStatus {
-    DRAFT = 'draft',
-    FINAL = 'final'
+export enum DraftStatus {
+  DRAFT = 'DRAFT',
+  IN_REVIEW = 'IN_REVIEW',
+  READY = 'READY',
+  FINALIZED = 'FINALIZED',
+}
+
+export enum DraftSource {
+  UPLOAD = 'UPLOAD',
+  GENERAL = 'GENERAL',
 }
 
 @Entity('drafts')
-@Index(['userId'])
-@Index(['guestSessionId'])
-@Index(['expiresAt'])
+@Index('idx_drafts_user_updated', ['userId', 'updatedAt'])
+@Index('idx_drafts_guest', ['guestSessionId'])
+@Index('idx_drafts_status', ['status'])
 export class Draft {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ name: 'user_id', type: 'uuid', nullable: true })
-    userId?: string;
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
+  userId?: string;
 
-    @Column({ name: 'guest_session_id', nullable: true })
-    guestSessionId?: string;
+  @Column({ name: 'guest_session_id', type: 'uuid', nullable: true })
+  guestSessionId?: string;
 
-    @Column({ name: 'is_guest', default: false })
-    isGuest: boolean;
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  title?: string;
 
-    @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })
-    expiresAt?: Date;
+  @Column({
+    type: 'enum',
+    enum: DraftStatus,
+    default: DraftStatus.DRAFT,
+  })
+  status: DraftStatus;
 
-    @Column({ nullable: true })
-    title?: string;
+  @Column({
+    type: 'enum',
+    enum: DraftSource,
+    default: DraftSource.UPLOAD,
+  })
+  source: DraftSource;
 
-    @Column({ name: 'resume_text', type: 'text', nullable: true })
-    resumeText?: string;
+  @Column({ name: 'resume_text', type: 'text', nullable: true })
+  resumeText?: string;
 
-    @Column({ name: 'jd_text', type: 'text', nullable: true })
-    jdText?: string;
+  @Column({ name: 'jd_text', type: 'text', nullable: true })
+  jdText?: string;
 
-    @Column({ name: 'resume_file_path', nullable: true })
-    resumeFilePath?: string;
+  @Column({ name: 'latest_analysis_id', type: 'uuid', nullable: true })
+  latestAnalysisId?: string;
 
-    @Column({ name: 'jd_file_path', nullable: true })
-    jdFilePath?: string;
+  @Column({ name: 'latest_rewrite_id', type: 'uuid', nullable: true })
+  latestRewriteId?: string;
 
-    @Column({
-        type: 'enum',
-        enum: DraftStatus,
-        default: DraftStatus.DRAFT
-    })
-    status: DraftStatus;
+  @Column({ name: 'finalized_export_id', type: 'uuid', nullable: true })
+  finalizedExportId?: string;
 
-    @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
-    deletedAt?: Date;
+  @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })
+  expiresAt?: Date;
 
-    @CreateDateColumn({ type: 'timestamptz' })
-    createdAt: Date;
+  @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
-    updatedAt: Date;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
 
-    // Relationships
-    @ManyToOne(() => User, user => user.drafts)
-    user: User;
-
-    @OneToMany(() => Analysis, analysis => analysis.draft)
-    analyses: Analysis[];
-
-    @OneToMany(() => Rewrite, rewrite => rewrite.draft)
-    rewrites: Rewrite[];
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 }

@@ -13,60 +13,60 @@ export class GuestService {
         private analysisRepository: Repository<Analysis>
     ) { }
 
-    async createDraft(guestSessionId: string): Promise<{ draftId: string }> {
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24);
+    // async createDraft(guestSessionId: string): Promise<{ draftId: string }> {
+    //     const expiresAt = new Date();
+    //     expiresAt.setHours(expiresAt.getHours() + 24);
 
-        const draft = this.draftRepository.create({
-            isGuest: true,
-            guestSessionId,
-            expiresAt
-        });
+    //     const draft = this.draftRepository.create({
+    //         isGuest: true,
+    //         guestSessionId,
+    //         expiresAt
+    //     });
 
-        const savedDraft = await this.draftRepository.save(draft);
-        return { draftId: savedDraft.id };
-    }
+    //     const savedDraft = await this.draftRepository.save(draft);
+    //     return { draftId: savedDraft.id };
+    // }
 
-    async getDraft(id: string, guestSessionId: string): Promise<Partial<Draft>> {
-        const draft = await this.draftRepository.findOne({
-            where: { id, guestSessionId }
-        });
+    // async getDraft(id: string, guestSessionId: string): Promise<Partial<Draft>> {
+    //     const draft = await this.draftRepository.findOne({
+    //         where: { id, guestSessionId }
+    //     });
 
-        if (!draft) {
-            throw new NotFoundException('Draft not found');
-        }
+    //     if (!draft) {
+    //         throw new NotFoundException('Draft not found');
+    //     }
 
-        // Return minimal fields
-        return {
-            id: draft.id,
-            title: draft.title,
-            createdAt: draft.createdAt,
-            expiresAt: draft.expiresAt
-        };
-    }
+    //     // Return minimal fields
+    //     return {
+    //         id: draft.id,
+    //         title: draft.title,
+    //         createdAt: draft.createdAt,
+    //         expiresAt: draft.expiresAt
+    //     };
+    // }
 
-    async createAnalysis(draftId: string, guestSessionId: string): Promise<{ matchScore: number }> {
-        // Verify draft ownership
-        const draft = await this.draftRepository.findOne({
-            where: { id: draftId, guestSessionId }
-        });
+    // async createAnalysis(draftId: string, guestSessionId: string): Promise<{ matchScore: number }> {
+    //     // Verify draft ownership
+    //     const draft = await this.draftRepository.findOne({
+    //         where: { id: draftId, guestSessionId }
+    //     });
 
-        if (!draft) {
-            throw new NotFoundException('Draft not found');
-        }
+    //     if (!draft) {
+    //         throw new NotFoundException('Draft not found');
+    //     }
 
-        // Stub: Create analysis with hardcoded score
-        const analysis = this.analysisRepository.create({
-            draftId,
-            matchScore: 75.5, // Hardcoded for now
-            model: 'mock-model',
-            tokensUsed: 120,
-            suggestionsJson: {
-                summary: 'Sample suggestions for guest draft',
-            },
-        });
+    //     // Stub: Create analysis with hardcoded score
+    //     const analysis = this.analysisRepository.create({
+    //         draftId,
+    //         matchScore: 75.5, // Hardcoded for now
+    //         model: 'mock-model',
+    //         tokensUsed: 120,
+    //         suggestionsJson: {
+    //             summary: 'Sample suggestions for guest draft',
+    //         },
+    //     });
 
-        await this.analysisRepository.save(analysis);
-        return { matchScore: analysis.matchScore };
-    }
+    //     await this.analysisRepository.save(analysis);
+    //     return { matchScore: analysis.matchScore };
+    // }
 }

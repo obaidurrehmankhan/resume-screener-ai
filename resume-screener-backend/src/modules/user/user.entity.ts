@@ -1,11 +1,9 @@
 import { UserRole } from '../../common/enums/user-role.enum';
-import { Draft } from '../../database/entities/draft.entity';
 import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
     CreateDateColumn,
-    OneToMany,
     UpdateDateColumn,
 } from 'typeorm';
 
@@ -41,8 +39,4 @@ export class User {
 
     @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt: Date;
-
-    // Relationships
-    @OneToMany(() => Draft, draft => draft.user)
-    drafts: Draft[];
 }

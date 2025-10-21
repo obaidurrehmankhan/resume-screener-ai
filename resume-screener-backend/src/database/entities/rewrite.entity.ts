@@ -1,12 +1,4 @@
-import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    ManyToOne,
-    Unique
-} from 'typeorm';
-import { Draft } from './draft.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique } from 'typeorm';
 
 @Entity('rewrites')
 @Unique(['draftId', 'version'])
@@ -31,8 +23,4 @@ export class Rewrite {
 
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
-
-    // Relationships
-    @ManyToOne(() => Draft, draft => draft.rewrites)
-    draft: Draft;
 }
