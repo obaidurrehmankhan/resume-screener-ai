@@ -4,21 +4,21 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { appLogger } from '../logger/app.logger';
 
 interface ErrorResponseBody {
-  success: false;
-  code: number;
-  message: string;
-  details?: unknown;
+  error: {
+    code: number;
+    message: string;
+    details?: unknown;
+  };
+  requestId?: string;
 }
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(HttpExceptionFilter.name);
-
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -34,34 +34,53 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const requestIdHeader =
       response.getHeader('x-request-id') ?? request.headers['x-request-id'];
-    const requestId = Array.isArray(requestIdHeader)
+    const requestIdValue = (Array.isArray(requestIdHeader)
       ? requestIdHeader[0]
-      : requestIdHeader;
+      : requestIdHeader) ?? request.requestId;
+    const requestId = requestIdValue
+      ? String(requestIdValue)
+      : undefined;
 
     const isInternalError = status === HttpStatus.INTERNAL_SERVER_ERROR;
     const responseMessage = isInternalError
       ? 'Internal server error'
       : extractedMessage ?? 'Internal server error';
 
+    const logContext = {
+      method: request.method,
+      path: request.originalUrl || request.url,
+      status,
+      requestId,
+    };
+
     if (isInternalError) {
       const errorMessage = extractedMessage ?? 'Unknown error';
-      const errorStack =
-        exception instanceof Error ? exception.stack : undefined;
-      this.logger.error(
-        `${request.method} ${request.url} -> ${status} [${requestId ?? 'unknown-request'}]: ${errorMessage}`,
-        errorStack,
+      const errValue =
+        exception instanceof Error ? exception : new Error(String(errorMessage));
+      appLogger.error(
+        {
+          ...logContext,
+          err: errValue,
+        },
+        'Unhandled exception',
       );
     } else {
-      this.logger.warn(
-        `${request.method} ${request.url} -> ${status} [${requestId ?? 'unknown-request'}]: ${extractedMessage}`,
+      appLogger.warn(
+        {
+          ...logContext,
+          details,
+        },
+        'Handled exception',
       );
     }
 
     const responseBody: ErrorResponseBody = {
-      success: false,
-      code: status,
-      message: responseMessage,
-      ...(!isInternalError && details !== undefined ? { details } : {}),
+      error: {
+        code: status,
+        message: responseMessage,
+        ...(!isInternalError && details !== undefined ? { details } : {}),
+      },
+      ...(requestId ? { requestId } : {}),
     };
 
     response.status(status).json(responseBody);
