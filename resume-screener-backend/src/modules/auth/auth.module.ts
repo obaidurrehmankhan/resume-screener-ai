@@ -8,6 +8,8 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { EntitlementsService } from '../../common/security/entitlements.service';
+import { EntitlementGuard } from '../../common/security/entitlement.guard';
 import { UserModule } from '../user/user.module';
 
 @Module({
@@ -35,8 +37,8 @@ import { UserModule } from '../user/user.module';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
-    exports: [JwtAuthGuard],
+    providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, EntitlementsService, EntitlementGuard],
+    exports: [JwtAuthGuard, EntitlementsService],
 
 })
 export class AuthModule { }

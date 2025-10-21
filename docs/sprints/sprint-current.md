@@ -117,19 +117,62 @@
 
 ---
 
-### P-116 — Entitlements baseline (BE + FE)
+### P-116 — Entitlements baseline (BE)
 
-**Goal:** Plans → entitlements mapping, guard, and exposure to FE; `panels_allowed` in analysis response.
+*## P-116 — Entitlements Baseline (Backend)
 
-**Steps:**
+**Goal:** Build the backend permission layer so routes and serializers know what each plan (Visitor/Free/Pro/Admin) can do. Expose entitlements to clients and enforce them on protected endpoints.
 
-* Add `Plan`, `Entitlement`, `PLAN_ENTITLEMENTS` map; `EntitlementGuard` + `@RequiresEntitlements`.
-* `/auth/me` returns `entitlements: string[]`.
-* In analysis serializer, compute `panels_allowed` from entitlements (`ATS`, `MATCH`, `SUGGESTIONS`).
-* **(FE)** Wire entitlements into session slice; Results Widget reads `panels_allowed`.
-* Use **guards/decorators** where required on BE; mirror gating on FE.
+**Deliverables (backend):**
 
-**DoD:** Visitor can analyze but only sees **ATS** (others blurred); **finalize route blocked for non-PRO** (guard unit test).
+* `src/common/types/entitlements.ts` — `Plan`, `Entitlement`, `PLAN_ENTITLEMENTS` map
+* `src/common/security/entitlement.decorator.ts` + `src/common/security/entitlement.guard.ts` — route-level entitlement checks
+* `src/common/security/entitlements.service.ts` — resolve plan (user or Visitor via `guest_draft_id`) → `Set<Entitlement>`
+* `GET /auth/me` — include `entitlements: string[]`
+* **Analysis serializer** — compute `panels_allowed` from entitlements (`ATS`, `MATCH`, `SUGGESTIONS`) and include in response
+* Protect at least one route with the guard, e.g. `POST /drafts/:id/finalize` requires `EXPORT`
+
+**Steps (≤5):**
+
+* Add `Plan`, `Entitlement`, `PLAN_ENTITLEMENTS` map and the `EntitlementsService`.
+* Create `@RequiresEntitlements(...ents)` decorator and `EntitlementGuard` that resolves plan and verifies required entitlements.
+* Update `/auth/me` to return `entitlements: string[]` per current plan (or Visitor via cookie).
+* In analysis response builder/serializer, populate `panels_allowed` from entitlements.
+* Apply the guard to `POST /drafts/:id/finalize` (requires `EXPORT`) and any other restricted endpoints.
+
+**OpenAPI (Swagger):**
+
+* Add/confirm `@ApiTags('Auth')` (and relevant module tags) on controllers.
+* Document that `/auth/me` returns `entitlements[]`.
+* Document **403** on finalize when entitlement is missing.
+
+**Logging:**
+
+* On **403** from `EntitlementGuard`, log **warn** with `requestId`, `userId?`, `requiredEntitlements` (no PII).
+
+**Tests (backend):**
+
+* **Unit:** Guard denies Visitor on finalize (requires `EXPORT`).
+* **e2e:** Visitor can `POST /drafts/:id/analysis` (ATS only); Visitor gets **403** on `POST /drafts/:id/finalize`.
+
+**Postman quick verify:**
+
+* **Visitor** (no login, ensure `guest_draft_id` cookie):
+
+  * `GET /auth/me` → `plan=VISITOR`, `entitlements: ["ATS_VIEW"]`
+  * `POST /drafts/:id/analysis` → **200**
+  * `POST /drafts/:id/finalize` → **403**
+* **Pro user:**
+
+  * `GET /auth/me` → includes `EXPORT`
+  * `POST /drafts/:id/finalize` → **202/200** (per contract)
+
+**DoD (backend):**
+
+* `/auth/me` includes `entitlements[]`.
+* `panels_allowed` present in analysis responses and matches plan.
+* `finalize` route correctly **403** without `EXPORT`.
+* Unit + e2e pass.
 
 ---
 
