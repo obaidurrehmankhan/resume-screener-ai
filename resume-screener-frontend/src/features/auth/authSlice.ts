@@ -6,7 +6,7 @@ import type { PayloadAction } from '@reduxjs/toolkit'
 interface AuthState {
     token: string | null
     user: {
-        id: number
+        id: string
         name: string
         email: string,
         role: string

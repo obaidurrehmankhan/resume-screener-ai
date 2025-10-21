@@ -13,7 +13,7 @@ import { Repository } from 'typeorm'
 import { User } from '../user/user.entity'
 import { RegisterDto } from './dto/register.dto'
 import { LoginDto } from './dto/login.dto'
-import { UserRole } from '../common/enums/user-role.enum'
+import { UserRole } from '../../common/enums/user-role.enum'
 import { UserPayload } from './types/user-payload'
 
 @Injectable()
@@ -28,7 +28,7 @@ export class AuthService {
      * Handles user registration:
      * - Hashes password
      * - Saves user to DB
-     * - Returns JWT token with 1-hour expiration
+     * - Returns JWT token with configured expiration
      */
     async register(dto: RegisterDto): Promise<{ token: string; user: Omit<User, 'password'> }> {
         const { email, password, name, profession } = dto
@@ -50,10 +50,9 @@ export class AuthService {
         })
         const savedUser = await this.userRepo.save(user)
 
-        // Sign token with expiration (1 hour)
+        // Sign token using module-level defaults
         const token = this.jwtService.sign(
             { sub: savedUser.id, email: savedUser.email, role: savedUser.role },
-            { expiresIn: '1h' } // ⏰ Add exp field to token
         )
 
         const { password: _password, ...safeUser } = savedUser
@@ -64,7 +63,7 @@ export class AuthService {
     /**
      * Handles login:
      * - Verifies user credentials
-     * - Returns JWT token with 1-hour expiration
+     * - Returns JWT token with configured expiration
      */
     async login(dto: LoginDto): Promise<{ token: string; user: Omit<User, 'password'> }> {
         const user = await this.userRepo.findOne({ where: { email: dto.email } })
@@ -76,10 +75,9 @@ export class AuthService {
         const match = await bcrypt.compare(dto.password, user.password)
         if (!match) throw new UnauthorizedException('Invalid credentials')
 
-        // Sign token with expiration (1 hour)
+        // Sign token using module-level defaults
         const token = this.jwtService.sign(
             { sub: user.id, email: user.email, role: user.role },
-            { expiresIn: '1h' } // ⏰ Add exp field to token
         )
 
         const { password: _password, ...safeUser } = user
@@ -97,10 +95,15 @@ export class AuthService {
     async getMe(userId: string) {
         const user = await this.userRepo.findOne({
             where: { id: userId },
-            select: ['id', 'email', 'name', 'role'],
+            select: ['id', 'email', 'name', 'role', 'isActive'],
         })
 
-        return user
+        if (!user || !user.isActive) {
+            return null
+        }
+
+        const { isActive, ...safeUser } = user
+        return safeUser
     }
 
 

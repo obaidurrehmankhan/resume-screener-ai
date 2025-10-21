@@ -12,7 +12,7 @@ import {
 // If the file is named differently (e.g., 'Analysis.entity.ts' or 'analysisEntity.ts'), update the import accordingly.
 import { Analysis } from './analysis.entity';
 import { Rewrite } from './rewrite.entity';
-import { User } from '../../user/user.entity';
+import { User } from '../../modules/user/user.entity';
 
 enum DraftStatus {
     DRAFT = 'draft',

@@ -6,9 +6,9 @@ import * as request from 'supertest';
 import * as cookieParser from 'cookie-parser';
 import { GuestModule } from './guest.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { dataSourceOptions } from '../database/data-source';
+import { dataSourceOptions } from '../../database/data-source';
 import { DataSource } from 'typeorm';
-import { ENTITIES } from '../database/entities';
+import { ENTITIES } from '../../database/entities';
 
 describe('Guest Module (e2e)', () => {
     let app: INestApplication;

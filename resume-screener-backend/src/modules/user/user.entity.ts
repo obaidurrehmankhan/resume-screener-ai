@@ -1,5 +1,5 @@
-import { UserRole } from '../common/enums/user-role.enum';
-import { Draft } from '../database/entities/draft.entity';
+import { UserRole } from '../../common/enums/user-role.enum';
+import { Draft } from '../../database/entities/draft.entity';
 import {
     Entity,
     PrimaryGeneratedColumn,

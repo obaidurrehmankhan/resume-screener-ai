@@ -1,9 +1,10 @@
-import { Controller, Post, Get, Param, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Param, UseGuards, HttpCode, HttpStatus, Body } from '@nestjs/common';
 import { ApiTags, ApiCookieAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { GuestService } from './guest.service';
 import { GuestSessionGuard } from './guest-session.guard';
-import { Request } from 'express';
+import { GuestSession } from './decorators/guest-session.decorator';
+import { CreateAnalysisDto } from './dto/create-analysis.dto';
 
 @ApiTags('Guest')
 @Controller('guest')
@@ -15,16 +16,16 @@ export class GuestController {
     @Post('drafts')
     @ApiOperation({ summary: 'Create a new guest draft' })
     @ApiResponse({ status: 201, description: 'Draft created successfully' })
-    async createDraft(@Req() req: Request) {
-        return this.guestService.createDraft(req['guestSessionId']);
+    async createDraft(@GuestSession() guestSessionId: string) {
+        return this.guestService.createDraft(guestSessionId);
     }
 
     @Get('drafts/:id')
     @ApiOperation({ summary: 'Get a guest draft by ID' })
     @ApiResponse({ status: 200, description: 'Draft found' })
     @ApiResponse({ status: 404, description: 'Draft not found' })
-    async getDraft(@Param('id') id: string, @Req() req: Request) {
-        return this.guestService.getDraft(id, req['guestSessionId']);
+    async getDraft(@Param('id') id: string, @GuestSession() guestSessionId: string) {
+        return this.guestService.getDraft(id, guestSessionId);
     }
 
     @Post('analyses')
@@ -39,7 +40,10 @@ export class GuestController {
             }
         }
     })
-    async createAnalysis(@Req() req: Request) {
-        return this.guestService.createAnalysis(req.body.draftId, req['guestSessionId']);
+    async createAnalysis(
+        @Body() dto: CreateAnalysisDto,
+        @GuestSession() guestSessionId: string,
+    ) {
+        return this.guestService.createAnalysis(dto.draftId, guestSessionId);
     }
 }

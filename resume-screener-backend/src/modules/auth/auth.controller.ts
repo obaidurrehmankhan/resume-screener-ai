@@ -3,22 +3,22 @@ import {
     Get,
     Post,
     Body,
-    Req,
     UseGuards,
     HttpCode,
     HttpStatus,
-    UnauthorizedException
+    UnauthorizedException,
+    NotFoundException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { Request } from 'express';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
-import { UserRole } from '../common/enums/user-role.enum';
+import { UserRole } from '../../common/enums/user-role.enum';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UserPayload } from './types/user-payload';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -41,19 +41,19 @@ export class AuthController {
    */
     @Get('me')
     @UseGuards(JwtAuthGuard)
-    getMe(@Req() req: Request) {
-        const userId = (req.user as UserPayload | undefined)?.sub;
-        if (!userId) {
-            throw new UnauthorizedException('Invalid token');
+    async getMe(@CurrentUser() user: UserPayload) {
+        const profile = await this.authService.getMe(user.sub);
+        if (!profile) {
+            throw new NotFoundException('User not found');
         }
-        return this.authService.getMe(userId);
+        return profile;
     }
 
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @Post('create-admin')
-    createAdmin(@Body() dto: RegisterDto, @Req() req: Request) {
-        return this.authService.createAdmin(dto, req.user as UserPayload);
+    createAdmin(@Body() dto: RegisterDto, @CurrentUser() user: UserPayload) {
+        return this.authService.createAdmin(dto, user);
     }
 
 }

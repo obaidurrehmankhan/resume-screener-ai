@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useLoginMutation, authApi } from '@/features/auth/authApi'
+import { useLoginMutation, useLazyGetMeQuery } from '@/features/auth/authApi'
 import { useDispatch } from 'react-redux'
 import { setToken, setUser } from '@/features/auth/authSlice'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
-import { store } from '@/app/store'
 
 const LoginScreen = () => {
     // 🎯 Form state for controlled inputs
@@ -27,6 +26,7 @@ const LoginScreen = () => {
 
     // 🔗 RTK Query login mutation
     const [triggerLogin, { isLoading }] = useLoginMutation()
+    const [triggerGetMe] = useLazyGetMeQuery()
 
     // 📌 Handle form input change
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,20 +62,16 @@ const LoginScreen = () => {
             dispatch(setToken(token))
 
             // 🔄 Step 3: Immediately fetch user info using token
-            const meResponse: any = await store.dispatch(authApi.endpoints.getMe.initiate())
+            const currentUser = await triggerGetMe().unwrap()
 
-            if ('data' in meResponse) {
-                const currentUser = meResponse.data
+            // 🧠 Step 4: Save user info to Redux store
+            dispatch(setUser(currentUser))
 
-                // 🧠 Step 4: Save user info to Redux store
-                dispatch(setUser(currentUser))
-
-                // 🚦 Step 5: Redirect based on role
-                if (currentUser.role === 'admin') {
-                    navigate('/admin') // 🧭 Admin panel
-                } else {
-                    navigate('/dashboard') // 🧭 Regular user dashboard
-                }
+            // 🚦 Step 5: Redirect based on role
+            if (currentUser.role === 'admin') {
+                navigate('/admin') // 🧭 Admin panel
+            } else {
+                navigate('/dashboard') // 🧭 Regular user dashboard
             }
         } catch (err: any) {
             // ❌ Show toast error for failed login

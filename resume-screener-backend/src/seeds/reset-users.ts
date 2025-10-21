@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
-import { User } from '../user/user.entity';
 import { config } from 'dotenv';
+import { User } from 'src/modules/user/user.entity';
 config();
 
 const AppDataSource = new DataSource({
@@ -24,8 +24,8 @@ async function resetUsers() {
         console.log('🧹 Deleting all users...');
         await userRepo.clear();
 
-        console.log('🔄 Resetting AUTO_INCREMENT...');
-        await AppDataSource.query('ALTER TABLE user AUTO_INCREMENT = 1;');
+        console.log('🔄 Resetting identity sequence...');
+        await AppDataSource.query('TRUNCATE TABLE "users" RESTART IDENTITY CASCADE;');
 
         console.log('✅ All users deleted and auto_increment reset');
     } catch (err) {

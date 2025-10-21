@@ -1,4 +1,4 @@
-import { User } from '../../user/user.entity';
+import { User } from '../../modules/user/user.entity';
 import { Draft } from './draft.entity';
 import { Analysis } from './analysis.entity';
 import { Rewrite } from './rewrite.entity';

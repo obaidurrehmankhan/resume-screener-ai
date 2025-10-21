@@ -1,8 +1,8 @@
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
-import { User } from '../user/user.entity';
 import { config } from 'dotenv';
 import { UserRole } from '../common/enums/user-role.enum';
+import { User } from 'src/modules/user/user.entity';
 config();
 
 const AppDataSource = new DataSource({

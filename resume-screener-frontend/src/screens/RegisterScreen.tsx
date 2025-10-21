@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { useRegisterMutation, authApi } from '@/features/auth/authApi'
+import { useRegisterMutation, useLazyGetMeQuery } from '@/features/auth/authApi'
 import { setToken, setUser } from '@/features/auth/authSlice'
 import { useDispatch } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { store } from '@/app/store'
 
 // 🎯 TypeScript types for form structure and validation errors
 type FormData = {
@@ -31,6 +30,7 @@ const RegisterScreen = () => {
 
     // 🚀 Redux + navigation setup
     const [register, { isLoading }] = useRegisterMutation()
+    const [triggerGetMe] = useLazyGetMeQuery()
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
@@ -65,10 +65,8 @@ const RegisterScreen = () => {
             dispatch(setToken(token))
 
             // 👤 Fetch user info after registration (GET /auth/me)
-            const meResult: any = await store.dispatch(authApi.endpoints.getMe.initiate())
-            if ('data' in meResult) {
-                dispatch(setUser(meResult.data))
-            }
+            const currentUser = await triggerGetMe().unwrap()
+            dispatch(setUser(currentUser))
 
             // 🔁 Redirect to dashboard
             navigate('/dashboard')

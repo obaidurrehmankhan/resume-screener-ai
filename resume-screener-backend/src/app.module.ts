@@ -3,12 +3,14 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { AuthModule } from './auth/auth.module';
-import { UserModule } from './user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
 import { HealthModule } from './health/health.module';
-import { GuestModule } from './guest/guest.module';
+import { GuestModule } from './modules/guest/guest.module';
 import { dataSourceOptions } from './database/data-source';
 import { LoggerModule } from './common/logger/logger.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -27,7 +29,9 @@ import { LoggerModule } from './common/logger/logger.module';
     LoggerModule,
     GuestModule,
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

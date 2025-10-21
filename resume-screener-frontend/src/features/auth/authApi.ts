@@ -48,7 +48,7 @@ export const authApi = createApi({
 
         // 👤 Get current authenticated user
         getMe: builder.query<
-            { id: number; email: string; name: string, role: string }, // ✅ Response = user info
+            { id: string; email: string; name: string; role: string }, // ✅ Response = user info
             void                                         // 🚫 No input params
         >({
             query: () => '/auth/me', // 🔍 GET request to /auth/me
@@ -61,4 +61,5 @@ export const {
     useLoginMutation,
     useRegisterMutation,
     useGetMeQuery,
+    useLazyGetMeQuery,
 } = authApi
