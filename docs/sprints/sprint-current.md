@@ -273,7 +273,7 @@
 
 * [D] P-101 Pino baseline
 * [D] P-102 Helmet + CORS + cookies
-* [ ] P-103 OpenAPI
+* [D] P-103 OpenAPI
 * [ ] P-104 Cookie JWT flows
 * [ ] P-107 Entities + migrations
 * [ ] P-116 Entitlements baseline
