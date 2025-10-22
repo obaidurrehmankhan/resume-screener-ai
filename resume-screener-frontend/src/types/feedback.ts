@@ -11,4 +11,5 @@ export type Feedback = {
         header: string[]
         experience: ExperienceSuggestion[]
     }
+    panelsAllowed?: string[]
 }

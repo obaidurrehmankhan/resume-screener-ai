@@ -557,8 +557,8 @@ Guarantee the “golden path” for this sprint stays green.
 * [D] P-107 Entities + migrations
 * [D] P-116 Entitlements baseline
 * [D] P-105 Session refactor (FE)
-* [ ] P-106 401 auto-refresh (FE)
-* [ ] P-117 Entitlements UI wiring (FE)
+* [D] P-106 401 auto-refresh (FE)
+* [D] P-117 Entitlements UI wiring (FE)
 * [ ] P-108 analysis.run worker
 * [ ] P-109 analysis/jobs endpoints
 * [ ] P-110 Results Widget

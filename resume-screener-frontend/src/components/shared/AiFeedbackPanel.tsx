@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import type { Feedback } from '@/types/feedback'
 import { Sparkles, User, Briefcase } from 'lucide-react'
@@ -49,6 +49,22 @@ export default function AiFeedbackPanel({ feedback, isLoading }: Props) {
         )
     }
 
+    const allowedPanels = new Set(feedback.panelsAllowed ?? ['ATS'])
+
+    const withEntitlementGate = (panel: string, content: ReactNode) =>
+        allowedPanels.has(panel) ? (
+            content
+        ) : (
+            <div className="relative">
+                <div className="select-none pointer-events-none opacity-40">{content}</div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="rounded-md border border-border bg-background/90 px-3 py-1 text-sm font-medium">
+                        Upgrade to unlock
+                    </span>
+                </div>
+            </div>
+        )
+
     const getScoreColor = (score: number) => {
         if (score >= 90)
             return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-100 dark:border-green-700'
@@ -67,54 +83,61 @@ export default function AiFeedbackPanel({ feedback, isLoading }: Props) {
             transition={{ duration: 0.4, ease: 'easeOut' }}
         >
             {/* 🎯 ATS Score */}
-            <motion.div
-                className={`p-4 rounded-lg border ${getScoreColor(feedback.matchScore)}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.1 }}
-            >
-                <p className="font-semibold text-lg">ATS Match Score</p>
-                <p className="text-3xl font-bold">{feedback.matchScore}%</p>
-            </motion.div>
-
-            {/* 🔍 Missing Skills */}
-            {feedback.missingSkills.length > 0 && (
+            {withEntitlementGate(
+                'ATS',
                 <motion.div
+                    className={`p-4 rounded-lg border ${getScoreColor(feedback.matchScore)}`}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
+                    transition={{ delay: 0.1 }}
                 >
-                    <h3 className="text-base font-semibold text-foreground dark:text-white mb-2">
-                        Missing Skills
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                        {feedback.missingSkills.map((skill) => (
-                            <span
-                                key={skill}
-                                className="px-3 py-1 text-sm rounded-full bg-muted text-foreground border border-border dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-600"
-                            >
-                                {skill}
-                            </span>
-                        ))}
-                    </div>
-                </motion.div>
+                    <p className="font-semibold text-lg">ATS Match Score</p>
+                    <p className="text-3xl font-bold">{feedback.matchScore}%</p>
+                </motion.div>,
             )}
 
+            {/* 🔍 Missing Skills */}
+            {feedback.missingSkills.length > 0 &&
+                withEntitlementGate(
+                    'MATCH',
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                    >
+                        <h3 className="text-base font-semibold text-foreground dark:text-white mb-2">
+                            Missing Skills
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {feedback.missingSkills.map((skill) => (
+                                <span
+                                    key={skill}
+                                    className="px-3 py-1 text-sm rounded-full bg-muted text-foreground border border-border dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-600"
+                                >
+                                    {skill}
+                                </span>
+                            ))}
+                        </div>
+                    </motion.div>,
+                )}
+
             {/* 🧠 AI Suggestions */}
-            <motion.div
-                className="space-y-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-            >
-                <div className="flex items-center justify-between mt-6 mb-2">
-                    <h3 className="text-xl font-semibold text-foreground dark:text-white">
-                        AI Suggestions
-                    </h3>
-                    <Button size="sm" variant="outline" onClick={toggleAll}>
-                        {openItems.length > 0 ? 'Collapse All' : 'Expand All'}
-                    </Button>
-                </div>
+            {withEntitlementGate(
+                'SUGGESTIONS',
+                <motion.div
+                    className="space-y-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                >
+                    <div className="flex items-center justify-between mt-6 mb-2">
+                        <h3 className="text-xl font-semibold text-foreground dark:text-white">
+                            AI Suggestions
+                        </h3>
+                        <Button size="sm" variant="outline" onClick={toggleAll}>
+                            {openItems.length > 0 ? 'Collapse All' : 'Expand All'}
+                        </Button>
+                    </div>
 
                 <Accordion type="multiple" value={openItems} onValueChange={setOpenItems}>
                     {/* Summary */}
@@ -176,7 +199,8 @@ export default function AiFeedbackPanel({ feedback, isLoading }: Props) {
                         )
                     })}
                 </Accordion>
-            </motion.div>
+                </motion.div>,
+            )}
         </motion.div>
     )
 }

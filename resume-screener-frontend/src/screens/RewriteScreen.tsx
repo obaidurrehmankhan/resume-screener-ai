@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import { Button } from '@/components/ui/button'
 import AiFeedbackPanel from '@/components/shared/AiFeedbackPanel'
 import {
@@ -11,6 +12,8 @@ import {
 } from '@/components/ui/select'
 import { RefreshCcw, Save, ScanSearch } from 'lucide-react'
 import RichTextEditor from '@/components/rich-text-editor'
+import { selectHasEntitlement } from '@/features/auth/authSelectors'
+import type { RootState } from '@/app/store'
 
 const tones = ['Formal', 'Casual', 'Friendly']
 
@@ -18,7 +21,18 @@ export default function RewriteScreen() {
     const navigate = useNavigate()
     const [selectedTone, setSelectedTone] = useState('Formal')
 
-    const [dummySuggestions] = useState({
+    const canExport = useSelector((state: RootState) => selectHasEntitlement(state, 'EXPORT'))
+    const canViewMatch = useSelector((state: RootState) => selectHasEntitlement(state, 'MATCH_VIEW'))
+    const canViewSuggestions = useSelector((state: RootState) => selectHasEntitlement(state, 'SUGGESTIONS_VIEW'))
+
+    const panelsAllowed = useMemo(() => {
+        const panels = ['ATS']
+        if (canViewMatch) panels.push('MATCH')
+        if (canViewSuggestions) panels.push('SUGGESTIONS')
+        return panels
+    }, [canViewMatch, canViewSuggestions])
+
+    const dummySuggestions = useMemo(() => ({
         matchScore: 72,
         missingSkills: ['React', 'Node.js'],
         suggestions: {
@@ -44,7 +58,8 @@ export default function RewriteScreen() {
                 },
             ],
         },
-    })
+        panelsAllowed,
+    }), [panelsAllowed])
 
     const handleRegenerate = () => {
         console.log(`Regenerating with tone: ${selectedTone}`)
@@ -108,6 +123,9 @@ export default function RewriteScreen() {
                         <Button onClick={handleCheckATS}>
                             <ScanSearch className="w-4 h-4 mr-2" />
                             Check ATS Again
+                        </Button>
+                        <Button disabled={!canExport} title={!canExport ? 'Pro feature' : undefined}>
+                            Finalize &amp; Download
                         </Button>
                     </div>
 

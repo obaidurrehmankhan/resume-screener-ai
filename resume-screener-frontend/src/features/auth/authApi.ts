@@ -19,7 +19,12 @@ const rawBaseQuery = fetchBaseQuery({
 });
 
 export const redirectToLogin = () => {
-  if (typeof window !== 'undefined' && typeof window.location?.assign === 'function') {
+  if (typeof window === 'undefined') return;
+  const pathname = window.location?.pathname ?? '';
+  if (pathname === '/login' || pathname === '/register') {
+    return;
+  }
+  if (typeof window.location?.assign === 'function') {
     window.location.assign('/login');
   }
 };

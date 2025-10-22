@@ -1,5 +1,5 @@
 // 📦 React hooks
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 
 // 🧠 Redux hooks & store
@@ -25,12 +25,23 @@ const AppShell = () => {
     const [isAuthChecked, setIsAuthChecked] = useState(false)
     const user = useSelector((state: RootState) => state.auth.user)
     const [fetchSession] = useLazyGetMeQuery()
+    const attemptedHydrateRef = useRef(false)
 
     // 🌍 Determine whether to show full Footer
     const hideFooterFor = ['/dashboard', '/dashboard/', '/admin', '/admin/']
     const isDashboardOrAdmin = hideFooterFor.some(path => location.pathname.startsWith(path))
 
     useEffect(() => {
+        if (user) {
+            setIsAuthChecked(true)
+            return
+        }
+
+        if (attemptedHydrateRef.current) {
+            setIsAuthChecked(true)
+            return
+        }
+
         const hydrateAuth = async () => {
             try {
                 const session = await fetchSession().unwrap()
@@ -53,11 +64,8 @@ const AppShell = () => {
             }
         }
 
-        if (!user) {
-            hydrateAuth()
-        } else {
-            setIsAuthChecked(true)
-        }
+        attemptedHydrateRef.current = true
+        hydrateAuth()
     }, [dispatch, fetchSession, user])
 
     if (!isAuthChecked) {
