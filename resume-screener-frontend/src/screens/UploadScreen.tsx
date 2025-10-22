@@ -10,7 +10,7 @@ import ResumeDropzone from '@/components/shared/ResumeDropdzone'
 import type { Feedback } from '@/types/feedback'
 
 export default function UploadScreen() {
-    const isLoggedIn = useSelector((state: RootState) => Boolean(state.auth.token && state.auth.user))
+    const isLoggedIn = useSelector((state: RootState) => Boolean(state.auth.user))
 
     const [resume, setResume] = useState<File | string>('')
     const [jobDescription, setJobDescription] = useState('')

@@ -9,5 +9,10 @@ export default defineConfig({
       // Map "@" to the "src" directory
       '@': path.resolve(__dirname, 'src')
     }
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './vitest.setup.ts'
   }
 })

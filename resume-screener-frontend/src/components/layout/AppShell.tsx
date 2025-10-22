@@ -4,7 +4,6 @@ import { Outlet, useLocation } from 'react-router-dom'
 
 // 🧠 Redux hooks & store
 import { useDispatch, useSelector } from 'react-redux'
-import { store } from '@/app/store'
 
 // 🧱 Layout components
 import { Navbar } from './Navbar'
@@ -14,8 +13,8 @@ import { Footer } from './Footer'
 import { Toaster } from 'sonner'
 
 // 🌐 RTK Query: hydrate user
-import { authApi } from '@/features/auth/authApi'
-import { setUser } from '@/features/auth/authSlice'
+import { useLazyGetMeQuery } from '@/features/auth/authApi'
+import { clearSession, setSession } from '@/features/auth/authSlice'
 import type { RootState } from '@/app/store'
 
 // 🧩 AppShell: Global wrapper for all routes
@@ -24,7 +23,8 @@ const AppShell = () => {
     const location = useLocation()
 
     const [isAuthChecked, setIsAuthChecked] = useState(false)
-    const token = useSelector((state: RootState) => state.auth.token)
+    const user = useSelector((state: RootState) => state.auth.user)
+    const [fetchSession] = useLazyGetMeQuery()
 
     // 🌍 Determine whether to show full Footer
     const hideFooterFor = ['/dashboard', '/dashboard/', '/admin', '/admin/']
@@ -32,21 +32,33 @@ const AppShell = () => {
 
     useEffect(() => {
         const hydrateAuth = async () => {
-            if (token) {
-                try {
-                    const result: any = await store.dispatch(authApi.endpoints.getMe.initiate())
-                    if ('data' in result) {
-                        dispatch(setUser(result.data))
-                    }
-                } catch (err) {
-                    console.error('❌ Auth hydration failed', err)
-                }
+            try {
+                const session = await fetchSession().unwrap()
+                dispatch(
+                    setSession({
+                        user: {
+                            id: session.id,
+                            name: session.name,
+                            email: session.email,
+                            role: session.role,
+                        },
+                        plan: session.plan,
+                        entitlements: session.entitlements,
+                    })
+                )
+            } catch {
+                dispatch(clearSession())
+            } finally {
+                setIsAuthChecked(true)
             }
-            setIsAuthChecked(true)
         }
 
-        hydrateAuth()
-    }, [dispatch, token])
+        if (!user) {
+            hydrateAuth()
+        } else {
+            setIsAuthChecked(true)
+        }
+    }, [dispatch, fetchSession, user])
 
     if (!isAuthChecked) {
         return <div className="p-4 text-muted-foreground">Loading...</div>

@@ -4,7 +4,7 @@ import { configureStore } from '@reduxjs/toolkit'
 // 🌐 RTK Query API definition — contains login, register, getMe, etc.
 import { authApi } from '@/features/auth/authApi'
 
-// 🔐 Auth slice — handles token, user info, and auth state
+// 🔐 Auth slice — handles session user, plan, entitlements
 import authReducer from '@/features/auth/authSlice'
 
 // 🔁 Optional helper from RTK Query to enable refetch on reconnect/focus
@@ -16,7 +16,7 @@ export const store = configureStore({
         // 👇 RTK Query's reducer for API caching & state (under 'authApi' key)
         [authApi.reducerPath]: authApi.reducer,
 
-        // 👇 Our custom auth reducer (holds token, user, etc.)
+        // 👇 Our custom auth reducer (holds session details)
         auth: authReducer,
     } as any,
 

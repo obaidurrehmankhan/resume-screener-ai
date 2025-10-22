@@ -173,144 +173,378 @@
 * `panels_allowed` present in analysis responses and matches plan.
 * `finalize` route correctly **403** without `EXPORT`.
 * Unit + e2e pass.
+---
+
+## P-105 — Session Refactor to Cookies (Frontend)
+
+**Goal**
+Stop using localStorage for tokens; use **HttpOnly cookies** with RTK Query.
+
+**Deliverables (frontend)**
+
+* RTK Query `baseQuery` configured with `credentials: 'include'`
+* Token reads/writes to localStorage removed
+* Session hydration via `/auth/me` on app start
+* localStorage used **only** for jobIds (tracking), not tokens
+
+**Steps (≤5)**
+
+1. Set `fetchBaseQuery({ baseUrl, credentials: 'include' })`.
+2. Remove all token storage/access code from Redux/localStorage.
+3. Add an app-init thunk or hook to call `/auth/me` and populate `user, plan, entitlements`.
+4. Keep `jobIds` in localStorage for tracking; nothing else auth-related.
+5. Update guards/PrivateRoutes to rely on session slice, not tokens.
+
+**Testing**
+
+* Unit: selectors return correct session when `/auth/me` succeeds/fails.
+* Manual: login → hard refresh → still authenticated (cookies).
+
+**DoD**
+
+* Refresh persists session without any token in localStorage.
 
 ---
 
-### P-108 — BullMQ queues & analysis worker skeleton (BE)
+## P-106 — 401 Auto-Refresh (Frontend)
 
-**Goal:** `analysis.run` queue & worker that saves Analysis and moves Draft `IN_REVIEW → READY`.
+**Goal**
+When an API call returns 401, automatically call `/auth/refresh` once, then retry the original request.
 
-**Steps:**
+**Deliverables (frontend)**
 
-* Queue + processor with **retries/backoff**.
-* Processor saves **stub Analysis** with ATS and placeholder fields.
-* Update Draft links (`latest_analysis_id`) and status.
+* A wrapped `baseQuery` (or `baseQueryWithReauth`) that handles 401 → refresh → retry
+* Small test for the wrapper logic
 
-**DoD:** Enqueue job → **completes → DB updated**; worker logs with `jobId`.
+**Steps (≤5)**
+
+1. Implement `baseQueryWithReauth`: try request; on 401, call `/auth/refresh`; if success, retry once.
+2. Prevent loops: only one retry per request. If still 401, dispatch logout and redirect to login.
+3. Plug `baseQueryWithReauth` into RTK Query API.
+4. Add console-safe debug logs in dev builds.
+5. Write a unit test that mocks 401 → refresh → success.
+
+**Testing**
+
+* Manual: delete `access_token` cookie, call a protected endpoint, confirm auto-refresh & retry.
+* Unit test passes.
+
+**DoD**
+
+* Seamless refresh in the browser; no infinite loops; correct logout on double-401.
+---
+## P-117 — Entitlements UI Wiring (Frontend)
+
+**Goal:** Use backend **entitlements** (`/auth/me`) and `panels_allowed` (from analysis response) to control visibility/blur and actions in the UI.
+
+**Deliverables (frontend):**
+
+* Session slice stores `entitlements: string[]` fetched via `/auth/me` (RTK Query).
+* `ResultsWidget` renders ATS/Match/Suggestions and **blurs** non-entitled cards with an **Upgrade** CTA, driven by `panels_allowed`.
+* **Finalize** action is **disabled/hidden** unless entitlement includes `EXPORT` (show tooltip: “Pro feature” when disabled).
+* *(Optional)* Lightweight route guard/HOC to block navigation to Pro-only flows without entitlement.
+* Selector helper: `selectHasEntitlement(state, 'EXPORT')` for reuse.
+
+**Steps (≤5):**
+
+* Extend session slice/types to persist `entitlements[]` from `/auth/me` (RTK Query `baseQuery` already uses `credentials:'include'` from P-105).
+* Update `ResultsWidget` to respect `panels_allowed` (`ATS`, `MATCH`, `SUGGESTIONS`): render all cards but **blur** those not allowed; overlay `UpgradeOverlay`.
+* Gate Finalize UI: `!selectHasEntitlement('EXPORT')` → disable/hide button and show tooltip/Upgrade CTA; allow when `EXPORT` present.
+* Implement `selectHasEntitlement(state, key)` and use it in components (Finalize button, menus, etc.).
+* *(Optional)* Add a simple guard/HOC to prevent routing into Pro-only pages without required entitlements.
+
+**Tests (frontend):**
+
+* `/try`: ATS visible; Match/Suggestions **blurred** with Upgrade CTA (Visitor).
+* Pro user: all cards visible; Finalize **enabled**.
+* Free user: Finalize **disabled** with tooltip; ATS visible; other panels blurred per `panels_allowed`.
+
+**DoD (frontend):**
+
+* Visitor sees **ATS only** on `/try`; other cards are **blurred** with Upgrade CTA.
+* Free **cannot Finalize**; Pro **can**.
+* All new tests green.
+
+---
+## P-108 — BullMQ Queues & Analysis Worker Skeleton (Backend)
+
+**Goal**
+Create the `analysis.run` queue and worker that processes analysis jobs, persists an `Analysis` record, and moves the `Draft` status from `IN_REVIEW` → `READY`.
+
+**Deliverables (backend)**
+
+* `src/modules/jobs/queues/analysis.queue.ts` — BullMQ queue factory (`analysis.run`)
+* `src/modules/jobs/processors/analysis.processor.ts` — worker/processor with retries/backoff
+* `src/modules/analyses/analyses.service.ts` — `runAnalysisJob(draftId, payload)` orchestration + stub scorer
+* Wiring in `AppModule` (or `JobsModule`) for Redis connection and processor registration
+* Pino job lifecycle logs (`queued`, `running`, `completed`, `failed`) with `jobId`, `draftId`, `userId?`
+
+**Steps (≤5)**
+
+1. **Queue**: Create BullMQ queue `analysis.run` with default opts (attempts=3, backoff exponential, removeOnComplete=true).
+2. **Processor**: Implement `@Processor('analysis.run')` with a handler that:
+
+   * validates payload (DTO), logs `running`, and calls a **stub** analyzer to compute `ats_score` (and placeholders for others),
+   * persists a new `Analysis`, updates `Draft.latest_analysis_id`, and sets `Draft.status='READY'`.
+3. **Service**: Add `runAnalysisJob(draftId, dto)` that enqueues a job and returns `{ jobId }`.
+4. **Errors**: On processor error, log `error` (no PII) and let BullMQ retry.
+5. **Config**: Read Redis URL from env; export concurrency via env (default 2–4).
+
+**OpenAPI (Swagger)**
+
+* No public route here, but annotate any DTOs used by the endpoint (P-109) that enqueues jobs.
+
+**Logging**
+
+* On enqueue: `info` `{ event:'job_queued', queue:'analysis.run', jobId, draftId, userId? }`
+* On start: `info` `{ event:'job_started', ... }`
+* On complete: `info` `{ event:'job_completed', ... }`
+* On fail: `error` `{ event:'job_failed', code, message }`
+
+**Tests (backend)**
+
+* **Unit**: `analyses.service` saves Analysis and updates Draft when given a fake scorer.
+* **Integration**: Processor persists Analysis and updates Draft on a real queue with in-memory Redis (or test Redis).
+
+**Postman quick verify**
+
+* Trigger via P-109 endpoint (below). Observe job logs and DB changes.
+
+**DoD**
+
+* Enqueue → processor runs → `Analysis` row created → `Draft.latest_analysis_id` set → `Draft.status='READY'`.
+* Pino job lifecycle logs include `jobId` and `draftId`.
 
 ---
 
-### P-109 — Analysis + Jobs endpoints (BE)
+## P-109 — Analysis + Jobs Endpoints (Backend)
 
-**Goal:** Kick analysis and poll job result.
+**Goal**
+Expose endpoints to kick an analysis and poll job status/result.
 
-**Steps:**
+**Deliverables (backend)**
 
-* `POST /drafts/:id/analysis` returns `{ jobId }` (support **Idempotency-Key**).
-* `GET /jobs/:jobId` returns `{ job, result? }` with JSON envelope.
-* Basic ownership/visitor access (**analysis allowed for Visitor**).
+* `POST /drafts/:id/analysis` — returns `{ jobId }`, supports `Idempotency-Key`
+* `GET /jobs/:jobId` — returns `{ job, result? }` in the standard JSON envelope
+* Ownership/visitor access checks (analysis allowed for Visitor)
 
-**DoD:** **e2e happy-path:** create draft → analyze → poll → result.
+**Steps (≤5)**
 
----
+1. **POST /drafts/:id/analysis**:
 
-### P-105 — Session refactor to cookies (FE)
+   * Validate `:id`, check ownership (user or `guest_draft_id` cookie).
+   * Support `Idempotency-Key`: return existing `{ jobId }` if the same key was used.
+   * Enqueue via `runAnalysisJob()` and return `{ jobId }`.
+2. **GET /jobs/:jobId**:
 
-**Goal:** Remove token `localStorage` usage; use cookies with RTK Query.
+   * Return job status and, if complete, the resulting entity shape (latest analysis data link or snippet).
+3. **Envelope**: All responses use `{ data, requestId, meta }`.
+4. **Security**: No auth required for analysis (Visitor allowed), but enforce ownership.
+5. **Indexes**: Confirm `jobs(status,type,created_at)` exists (from P-107).
 
-**Steps:**
+**OpenAPI (Swagger)**
 
-* Set `fetchBaseQuery({ credentials:'include' })`.
-* Delete all token reads/writes from localStorage; rely on `/auth/me` to hydrate session.
-* Keep **only jobIds** in localStorage (for job tracking), **not tokens**.
+* Tag: `@ApiTags('Analyses')` and `@ApiTags('Jobs')`.
+* Document `Idempotency-Key` header for `POST /drafts/:id/analysis`.
+* Document job response schema (`queued|running|completed|failed`).
 
-**DoD:** Refresh keeps session (via cookies) without any token in localStorage.
+**Logging**
 
----
+* On enqueue, include `{ draftId, userId?, idemKey? }`.
+* On GET job, include `{ jobId, status }` at `debug` level.
 
-### P-106 — 401 auto-refresh (FE)
+**Tests (backend)**
 
-**Goal:** Retry once on 401 via `/auth/refresh`.
+* **e2e**: create draft → `POST /drafts/:id/analysis` → `GET /jobs/:jobId` until `completed` → verify Analysis persisted & Draft status updated.
+* **Idempotency**: second POST with same `Idempotency-Key` returns the same `{ jobId }`.
 
-**Steps:**
+**Postman quick verify**
 
-* Wrap baseQuery: on 401 → call `/auth/refresh` → retry original; on fail → logout/redirect.
-* Add small test for wrapper logic.
+* POST analysis with `Idempotency-Key` header → `{ jobId }`.
+* Poll GET `/jobs/{jobId}` every 3s → `completed` and result present.
 
-**DoD:** Manual test shows **seamless refresh**.
+**DoD**
 
----
-
-### P-110 — Results Widget with blur gating (FE)
-
-**Goal:** Render ATS/Match/Missing/Suggestions; **blur** non-entitled.
-
-**Steps:**
-
-* `ResultsWidget` + `ResultCard` + `UpgradeOverlay`.
-* Loading, error, retry states.
-* Accept `panels_allowed` from backend.
-
-**DoD:** `/try` shows **ATS only**; others blurred with **Upgrade CTA**.
+* Happy-path works; idempotent POST; JSON envelope; Visitor access allowed with ownership checks.
 
 ---
 
-### P-111 — Analyze action (FE)
+## P-110 — Results Widget with Blur Gating (Frontend)
 
-**Goal:** Button to run analysis and start job tracking.
+**Goal**
+Render ATS/Match/Missing/Suggestions; **blur** non-entitled panels. Handle loading/error/retry states.
 
-**Steps:**
+**Deliverables (frontend)**
 
-* Mutations to `POST /drafts/:id/analysis`.
-* Toast “Working…” then “Result ready” with **View** (opens draft).
-* Disable **Check Score** until resume+JD present.
+* `components/ResultsWidget/ResultsWidget.tsx`
+* `components/ResultsWidget/ResultCard.tsx`
+* `components/ResultsWidget/UpgradeOverlay.tsx`
+* Props accept `panels_allowed` and raw analysis data; uses entitlements as fallback
 
-**DoD:** End-to-end from button → result appears in widget.
+**Steps (≤5)**
 
----
+1. Build `ResultCard` with slots for title, content, loading/error/retry.
+2. Build `UpgradeOverlay` (CTA) and a blur wrapper controlled by entitlement.
+3. Build `ResultsWidget` that maps `panels_allowed` → render cards; blur when not allowed.
+4. Add skeletons/spinners for loading, and a retry callback.
+5. Snapshot/unit tests for blur and loading states.
 
-### P-112 — Job tracking hook (FE)
+**Testing**
 
-**Goal:** `useJobTracking(jobId)` polls every 3s; persists `jobId`; resumes after refresh.
+* `/try`: ATS visible; others blurred with Upgrade CTA.
+* Pro route: all visible.
 
-**Steps:**
+**DoD**
 
-* Hook to poll `/jobs/:id` (**SSE/WebSocket** behind feature flag).
-* Persist `jobId` in localStorage and restore on mount.
-* Dispatch state updates; show completion toast.
-
-**DoD:** Refresh mid-job → still get result; **test with MSW**.
-
----
-
-### P-113 — Guest draft retention visuals (FE)
-
-**Goal:** Show “Restored guest draft” banner when `guest_draft_id` cookie present; explain 24h/72h.
-
-**Steps:**
-
-* Detect cookie presence (via `/auth/me` or a tiny endpoint).
-* Non-blocking banner with link to last draft.
-* Dismiss → persisted until cookie expires.
-
-**DoD:** Works in `/try`; **UX matches spec**.
+* Correct blur gating; clean loading/error UX; tests pass.
 
 ---
 
-### P-114 — OWASP quick pass (BE)
+## P-111 — Analyze Action (Frontend)
 
-**Goal:** Baseline protections aligned with backend instructions.
+**Goal**
+Wire the **Analyze** button to trigger backend analysis and start job tracking.
 
-**Steps:**
+**Deliverables (frontend)**
 
-* Ownership checks for draft read/write (user **OR** guest cookie).
-* Throttler (60 req/min) and basic mime/size validation stub.
-* Egress allowlist skeleton for AI/S3/SES.
+* RTK Query mutation for `POST /drafts/:id/analysis`
+* Button component that disables until resume+JD present
+* Toasts: “Working…” → “Result ready” with **View** action
 
-**DoD:** **403** on forbidden finalize; **429** on flood; tests cover one protected route.
+**Steps (≤5)**
+
+1. Create `useAnalyzeDraftMutation()` with header support for `Idempotency-Key`.
+2. Button: disable until both Resume & JD present; on click, call mutation and start tracking `{ jobId }`.
+3. Show non-blocking “Working…” toast; on completion, “Result ready” with deep link.
+4. Error handling: toast with retry and error details (no PII).
+5. Minimal test for disabled/enabled and mutation call.
+
+**Testing**
+
+* Manual: run analysis and confirm job starts; toasts show; results render.
+* Unit: button state & mutation call verified.
+
+**DoD**
+
+* End-to-end from button → job started → result visible in widget.
 
 ---
 
-### P-115 — Happy-path tests (FE + BE)
+## P-112 — Job Tracking Hook (Frontend)
 
-**Goal:** Ensure the golden path is reliable.
+**Goal**
+A hook that **polls** `/jobs/:id` every ~3s, persists jobId to localStorage, and resumes after refresh.
 
-**Steps:**
+**Deliverables (frontend)**
 
-* **BE e2e:** create draft → analyze → poll → result & status transition.
-* **FE test:** click Analyze → loading → result render in Results Widget (MSW jobs).
+* `features/jobs/useJobTracking.ts`
+* Redux slice or context entries to store job status/results per draft
+* Toast “Result ready” when job completes
 
-**DoD:** **CI green**; coverage note added to README.
+**Steps (≤5)**
+
+1. Implement `useJobTracking(jobId, onComplete)` to poll (or use SSE/WebSocket via feature flag).
+2. Persist `jobId` to localStorage keyed by draft; restore on mount.
+3. Dispatch state updates as job advances; call `onComplete` with result.
+4. Show a completion toast that deep-links back to the draft.
+5. Tests with MSW for polling & completion.
+
+**Testing**
+
+* Refresh mid-job → still get the result.
+* MSW test simulates `queued → running → completed`.
+
+**DoD**
+
+* Robust resume after refresh; no duplicate toasts; tests pass.
+
+---
+
+## P-113 — Guest Draft Retention Visuals (Frontend)
+
+**Goal**
+When a visitor returns (has `guest_draft_id`), show a banner to restore the last guest draft; explain 24h (soft 72h) retention.
+
+**Deliverables (frontend)**
+
+* `components/Common/GuestRestoreBanner.tsx`
+* Logic in `/try` to detect guest session and last draft
+* Dismiss state persisted until cookie expires
+
+**Steps (≤5)**
+
+1. Detect guest via `/auth/me` (plan=VISITOR).
+2. If last guest draft exists, show a banner with “Restore” (opens draft) and “Dismiss”.
+3. Persist dismiss flag (localStorage) until cookie expiration.
+4. Add a link to retention policy info.
+5. Test banner show/hide logic.
+
+**Testing**
+
+* Simulate cookie present → banner appears; on dismiss → stays hidden.
+* Restore loads last draft.
+
+**DoD**
+
+* Works on `/try`; UX matches spec; tests pass.
+
+---
+
+## P-114 — OWASP Quick Pass (Backend)
+
+**Goal**
+Baseline protections aligned with backend instructions.
+
+**Deliverables (backend)**
+
+* Ownership checks: ensure draft belongs to `userId` **or** `guest_draft_id`
+* Throttler: global rate limit (e.g., 60 req/min/IP)
+* Upload validation stub: max size & allowed mime types (PDF/DOCX)
+* Egress allowlist skeleton (OpenAI, Cohere, S3, SES domains)
+
+**Steps (≤5)**
+
+1. Implement an ownership guard/helper used by Draft/Analysis endpoints.
+2. Add Nest ThrottlerModule with sensible defaults; document 429 envelope.
+3. Add file-upload pipe/guard with size/mime checks (even if upload path is later).
+4. Add an outbound HTTP service wrapper that rejects non-allowlisted hosts.
+5. Tests for one protected route (403) and throttling (429).
+
+**OpenAPI (Swagger)**
+
+* Document 403/429 responses on representative endpoints.
+
+**Logging**
+
+* Log 403/429 at `warn` with `requestId`, `userId?` (no PII).
+
+**DoD**
+
+* 403 on forbidden finalize; 429 when rate-limited; tests pass.
+
+---
+
+## P-115 — Happy-Path Tests (FE + BE)
+
+**Goal**
+Guarantee the “golden path” for this sprint stays green.
+
+**Deliverables**
+
+* **Backend e2e** test: draft → analysis → job completes → analysis persisted → draft status `READY`
+* **Frontend** test: Analyze → loading → result render in `ResultsWidget` with blur gating
+
+**Steps (≤5)**
+
+1. **BE e2e** (Supertest): seed user/guest → create draft → POST analysis → poll job → assert analysis & status.
+2. **BE idempotency**: same `Idempotency-Key` returns same `{ jobId }`.
+3. **FE test** (RTL + MSW): click Analyze → loading/skeleton → completed result → ATS shows, others blurred.
+4. Add tests to CI; update README with `npm run test` commands.
+5. Add coverage threshold note (optional).
+
+**DoD**
+
+* CI green; both BE and FE happy paths verified; idempotency covered.
 
 ---
 
@@ -320,12 +554,13 @@
 * [D] P-102 Helmet + CORS + cookies
 * [D] P-103 OpenAPI
 * [D] P-104 Cookie JWT flows
-* [ ] P-107 Entities + migrations
-* [ ] P-116 Entitlements baseline
+* [D] P-107 Entities + migrations
+* [D] P-116 Entitlements baseline
+* [D] P-105 Session refactor (FE)
+* [ ] P-106 401 auto-refresh (FE)
+* [ ] P-117 Entitlements UI wiring (FE)
 * [ ] P-108 analysis.run worker
 * [ ] P-109 analysis/jobs endpoints
-* [ ] P-105 Session refactor (FE)
-* [ ] P-106 401 auto-refresh (FE)
 * [ ] P-110 Results Widget
 * [ ] P-111 Analyze action
 * [ ] P-112 Job tracking hook

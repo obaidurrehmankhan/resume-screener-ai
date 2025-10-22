@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLoginMutation, useLazyGetMeQuery } from '@/features/auth/authApi'
 import { useDispatch } from 'react-redux'
-import { setToken, setUser } from '@/features/auth/authSlice'
+import { setSession, clearSession } from '@/features/auth/authSlice'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Eye, EyeOff } from 'lucide-react'
@@ -55,19 +55,22 @@ const LoginScreen = () => {
         }
 
         try {
-            // 🔐 Step 1: Call login API → returns JWT token
-            const { token } = await triggerLogin(form).unwrap()
+            await triggerLogin(form).unwrap()
 
-            // ✅ Step 2: Save token to Redux store (and localStorage internally)
-            dispatch(setToken(token))
-
-            // 🔄 Step 3: Immediately fetch user info using token
             const currentUser = await triggerGetMe().unwrap()
+            dispatch(
+                setSession({
+                    user: {
+                        id: currentUser.id,
+                        name: currentUser.name,
+                        email: currentUser.email,
+                        role: currentUser.role,
+                    },
+                    plan: currentUser.plan,
+                    entitlements: currentUser.entitlements,
+                })
+            )
 
-            // 🧠 Step 4: Save user info to Redux store
-            dispatch(setUser(currentUser))
-
-            // 🚦 Step 5: Redirect based on role
             if (currentUser.role === 'admin') {
                 navigate('/admin') // 🧭 Admin panel
             } else {
@@ -76,6 +79,7 @@ const LoginScreen = () => {
         } catch (err: any) {
             // ❌ Show toast error for failed login
             toast.error('Invalid credentials')
+            dispatch(clearSession())
         }
     }
 

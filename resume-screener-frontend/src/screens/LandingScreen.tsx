@@ -15,10 +15,10 @@ import { FadeInSection } from "@/components/ui/FadeInSection"
 
 export default function LandingScreen() {
     // 🔄 Grab auth state from Redux store
-    const { token, user } = useSelector((state: RootState) => state.auth)
+    const { user } = useSelector((state: RootState) => state.auth)
 
     // ✅ Auth check to conditionally render UI
-    const isAuthenticated = Boolean(token)
+    const isAuthenticated = Boolean(user)
 
     return (
         <div className="bg-background text-foreground transition-colors duration-300">

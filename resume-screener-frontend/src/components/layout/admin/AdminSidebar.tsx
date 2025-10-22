@@ -2,7 +2,8 @@
 
 import { NavLink } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { logout } from '@/features/auth/authSlice'
+import { clearSession } from '@/features/auth/authSlice'
+import { useLogoutMutation } from '@/features/auth/authApi'
 import type { RootState } from '@/app/store'
 import { useEffect, useRef } from 'react'
 
@@ -35,6 +36,7 @@ const utilityNav = [
 
 export const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
     const dispatch = useDispatch()
+    const [triggerLogout] = useLogoutMutation()
     const user = useSelector((state: RootState) => state.auth.user)
     const sidebarRef = useRef<HTMLDivElement>(null)
 
@@ -137,8 +139,9 @@ export const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
                     <Button
                         variant="outline"
                         className="mt-6 w-full"
-                        onClick={() => {
-                            dispatch(logout())
+                        onClick={async () => {
+                            await triggerLogout().catch(() => undefined)
+                            dispatch(clearSession())
                             onClose()
                         }}
                     >

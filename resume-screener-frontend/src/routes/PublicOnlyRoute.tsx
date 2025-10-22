@@ -7,11 +7,11 @@ import type { RootState } from '@/app/store'
 
 // ✅ Component to block authenticated users from public pages like login/register
 export const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
-    // 👀 Read token and user data from Redux state
-    const { token, user } = useSelector((state: RootState) => state.auth)
+    // 👀 Read session data from Redux state
+    const { user } = useSelector((state: RootState) => state.auth)
 
     // 🔒 If user is already logged in → redirect them away from public page
-    if (token && user) return <Navigate to="/dashboard" replace />
+    if (user) return <Navigate to="/dashboard" replace />
 
     // 🟢 Otherwise show the public screen (e.g., login/register)
     return <>{children}</>

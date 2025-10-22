@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRegisterMutation, useLazyGetMeQuery } from '@/features/auth/authApi'
-import { setToken, setUser } from '@/features/auth/authSlice'
+import { setSession, clearSession } from '@/features/auth/authSlice'
 import { useDispatch } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
@@ -59,19 +59,27 @@ const RegisterScreen = () => {
 
         try {
             // 📤 Send registration API request (POST /auth/register)
-            const { token } = await register(form).unwrap()
+            await register(form).unwrap()
 
-            // 💾 Save token to Redux + localStorage
-            dispatch(setToken(token))
-
-            // 👤 Fetch user info after registration (GET /auth/me)
             const currentUser = await triggerGetMe().unwrap()
-            dispatch(setUser(currentUser))
+            dispatch(
+                setSession({
+                    user: {
+                        id: currentUser.id,
+                        name: currentUser.name,
+                        email: currentUser.email,
+                        role: currentUser.role,
+                    },
+                    plan: currentUser.plan,
+                    entitlements: currentUser.entitlements,
+                })
+            )
 
             // 🔁 Redirect to dashboard
             navigate('/dashboard')
         } catch (err) {
             toast.error('Registration failed. Please try again.')
+            dispatch(clearSession())
         }
     }
 

@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 
 // 🔐 Logout action
-import { logout } from '@/features/auth/authSlice'
+import { clearSession } from '@/features/auth/authSlice'
+import { useLogoutMutation } from '@/features/auth/authApi'
 
 // 🎨 UI Components & Radix Dropdown
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -27,14 +28,19 @@ export const Navbar = () => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
     const dispatch = useDispatch()
+    const [triggerLogout] = useLogoutMutation()
 
-    const { user, token } = useSelector((state: RootState) => state.auth)
-    const isAuthenticated = Boolean(token)
+    const { user } = useSelector((state: RootState) => state.auth)
+    const isAuthenticated = Boolean(user)
     const role = user?.role || 'guest'
 
     const handleLogout = () => {
-        dispatch(logout())
-        navigate('/login')
+        triggerLogout()
+            .catch(() => undefined)
+            .finally(() => {
+                dispatch(clearSession())
+                navigate('/login')
+            })
     }
 
     const publicLinks = [
