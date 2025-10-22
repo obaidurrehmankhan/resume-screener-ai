@@ -1,5 +1,5 @@
 // 📦 React hooks
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 
 // 🧠 Redux hooks & store
@@ -14,7 +14,8 @@ import { Toaster } from 'sonner'
 
 // 🌐 RTK Query: hydrate user
 import { useLazyGetMeQuery } from '@/features/auth/authApi'
-import { clearSession, setSession } from '@/features/auth/authSlice'
+import { clearSession, setHydrated, setSession } from '@/features/auth/authSlice'
+import { selectAuthHydrated } from '@/features/auth/authSelectors'
 import type { RootState } from '@/app/store'
 
 // 🧩 AppShell: Global wrapper for all routes
@@ -24,20 +25,15 @@ const AppShell = () => {
 
     const [isAuthChecked, setIsAuthChecked] = useState(false)
     const user = useSelector((state: RootState) => state.auth.user)
+    const hydrated = useSelector(selectAuthHydrated)
     const [fetchSession] = useLazyGetMeQuery()
-    const attemptedHydrateRef = useRef(false)
 
     // 🌍 Determine whether to show full Footer
     const hideFooterFor = ['/dashboard', '/dashboard/', '/admin', '/admin/']
     const isDashboardOrAdmin = hideFooterFor.some(path => location.pathname.startsWith(path))
 
     useEffect(() => {
-        if (user) {
-            setIsAuthChecked(true)
-            return
-        }
-
-        if (attemptedHydrateRef.current) {
+        if (hydrated) {
             setIsAuthChecked(true)
             return
         }
@@ -60,13 +56,18 @@ const AppShell = () => {
             } catch {
                 dispatch(clearSession())
             } finally {
-                setIsAuthChecked(true)
+                dispatch(setHydrated(true))
             }
         }
 
-        attemptedHydrateRef.current = true
         hydrateAuth()
-    }, [dispatch, fetchSession, user])
+    }, [dispatch, fetchSession, hydrated])
+
+    useEffect(() => {
+        if (hydrated) {
+            setIsAuthChecked(true)
+        }
+    }, [hydrated])
 
     if (!isAuthChecked) {
         return <div className="p-4 text-muted-foreground">Loading...</div>
