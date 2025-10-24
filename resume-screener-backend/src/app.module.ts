@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { BullModule } from '@nestjs/bullmq';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { HealthModule } from './health/health.module';
@@ -11,10 +12,23 @@ import { dataSourceOptions } from './database/data-source';
 import { LoggerModule } from './common/logger/logger.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AnalysesModule } from './modules/analyses/analyses.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const redisUrl = config.get<string>('REDIS_URL') ?? 'redis://127.0.0.1:6379';
+
+        return {
+          connection: {
+            url: redisUrl,
+          },
+        };
+      },
+    }),
     TypeOrmModule.forRoot({
       ...dataSourceOptions,
       autoLoadEntities: false,
@@ -28,6 +42,7 @@ import { AppService } from './app.service';
     HealthModule,
     LoggerModule,
     GuestModule,
+    AnalysesModule,
   ],
   controllers: [AppController],
   providers: [

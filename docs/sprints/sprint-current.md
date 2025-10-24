@@ -559,7 +559,7 @@ Guarantee the “golden path” for this sprint stays green.
 * [D] P-105 Session refactor (FE)
 * [D] P-106 401 auto-refresh (FE)
 * [D] P-117 Entitlements UI wiring (FE)
-* [ ] P-108 analysis.run worker
+* [D] P-108 analysis.run worker
 * [ ] P-109 analysis/jobs endpoints
 * [ ] P-110 Results Widget
 * [ ] P-111 Analyze action
