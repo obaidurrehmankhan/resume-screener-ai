@@ -22,6 +22,7 @@ describe('AnalysesService', () => {
     create: jest.fn(),
     save: jest.fn(),
     update: jest.fn(),
+    find: jest.fn(),
   };
   const queue = {
     add: jest.fn(),

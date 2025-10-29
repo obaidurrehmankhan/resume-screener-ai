@@ -1,5 +1,5 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Queue } from 'bullmq';
 import { Repository } from 'typeorm';
@@ -15,6 +15,10 @@ export interface RunAnalysisJobPayload {
   guestSessionId?: string;
   resumeText?: string;
   jobDescription?: string;
+}
+
+interface RunAnalysisJobOptions {
+  idempotencyKey?: string;
 }
 
 @Injectable()
@@ -34,11 +38,39 @@ export class AnalysesService {
   async runAnalysisJob(
     draftId: string,
     payload: RunAnalysisJobPayload,
-  ): Promise<{ jobId: string }> {
+    options: RunAnalysisJobOptions = {},
+  ): Promise<{ jobId: string; reused?: boolean }> {
     const draft = await this.draftRepository.findOne({ where: { id: draftId } });
 
     if (!draft) {
       throw new NotFoundException('Draft not found');
+    }
+
+    this.ensureDraftOwnership(draft, payload);
+
+    const { idempotencyKey } = options;
+
+    if (idempotencyKey) {
+      const existingJob = await this.findJobByIdempotencyKey(
+        draft.id,
+        idempotencyKey,
+      );
+
+      if (existingJob) {
+        appLogger.info(
+          {
+            event: 'job_idempotent_hit',
+            queue: ANALYSIS_QUEUE_NAME,
+            jobId: existingJob.id,
+            draftId,
+            userId: payload.userId,
+            idempotencyKey,
+          },
+          'analysis job idempotency key hit',
+        );
+
+        return { jobId: existingJob.id, reused: true };
+      }
     }
 
     draft.status = DraftStatus.IN_REVIEW;
@@ -51,6 +83,8 @@ export class AnalysesService {
       status: JobStatus.QUEUED,
       meta: {
         queue: ANALYSIS_QUEUE_NAME,
+        ...(payload.guestSessionId ? { guestSessionId: payload.guestSessionId } : {}),
+        ...(idempotencyKey ? { idempotencyKey } : {}),
       },
     });
 
@@ -89,11 +123,12 @@ export class AnalysesService {
         jobId: job.id,
         draftId,
         userId: payload.userId,
+        idempotencyKey,
       },
       'analysis job queued',
     );
 
-    return { jobId: job.id };
+    return { jobId: job.id, reused: false };
   }
 
   async processAnalysisJob(data: AnalysisQueuePayload): Promise<Analysis> {
@@ -129,5 +164,54 @@ export class AnalysesService {
     await this.draftRepository.save(draft);
 
     return savedAnalysis;
+  }
+
+  private ensureDraftOwnership(
+    draft: Draft,
+    payload: RunAnalysisJobPayload,
+  ): void {
+    if (draft.userId) {
+      if (!payload.userId || payload.userId !== draft.userId) {
+        throw new ForbiddenException('Draft not accessible');
+      }
+
+      return;
+    }
+
+    if (draft.guestSessionId) {
+      if (!payload.guestSessionId || payload.guestSessionId !== draft.guestSessionId) {
+        throw new ForbiddenException('Draft not accessible');
+      }
+    }
+  }
+
+  private async findJobByIdempotencyKey(
+    draftId: string,
+    idempotencyKey: string,
+  ): Promise<JobEntity | null> {
+    const recentJobs = await this.jobRepository.find({
+      where: {
+        draftId,
+        type: JobType.ANALYSIS,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+      take: 10,
+    });
+
+    return (
+      recentJobs.find((job) => {
+        const meta = job.meta ?? {};
+        if (typeof meta !== 'object' || meta === null) {
+          return false;
+        }
+
+        return (
+          (meta as Record<string, unknown>).idempotencyKey === idempotencyKey ||
+          (meta as Record<string, unknown>).idemKey === idempotencyKey
+        );
+      }) ?? null
+    );
   }
 }

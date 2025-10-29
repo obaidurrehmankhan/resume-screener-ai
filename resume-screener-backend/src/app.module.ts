@@ -13,6 +13,7 @@ import { LoggerModule } from './common/logger/logger.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AnalysesModule } from './modules/analyses/analyses.module';
+import { JobsModule } from './modules/jobs/jobs.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AnalysesModule } from './modules/analyses/analyses.module';
     LoggerModule,
     GuestModule,
     AnalysesModule,
+    JobsModule,
   ],
   controllers: [AppController],
   providers: [
