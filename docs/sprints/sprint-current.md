@@ -419,6 +419,7 @@ Wire the **Analyze** button to trigger backend analysis and start job tracking.
 3. Show non-blocking “Working…” toast; on completion, “Result ready” with deep link.
 4. Error handling: toast with retry and error details (no PII).
 5. Minimal test for disabled/enabled and mutation call.
+6. If possible we must add /try route in frontend that will get and show all results. But its up to you. 
 
 **Testing**
 
@@ -561,9 +562,9 @@ Guarantee the “golden path” for this sprint stays green.
 * [D] P-106 401 auto-refresh (FE)
 * [D] P-117 Entitlements UI wiring (FE)
 * [D] P-108 analysis.run worker
-* [ ] P-109 analysis/jobs endpoints
-* [ ] P-110 Results Widget
-* [ ] P-111 Analyze action
+* [D] P-109 analysis/jobs endpoints
+* [D] P-110 Results Widget
+* [D] P-111 Analyze action
 * [ ] P-112 Job tracking hook
 * [ ] P-113 Guest retention visuals
 * [ ] P-114 OWASP quick pass
