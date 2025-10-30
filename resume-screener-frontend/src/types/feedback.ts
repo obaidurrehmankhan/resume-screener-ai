@@ -4,6 +4,7 @@ export type ExperienceSuggestion = {
 }
 
 export type Feedback = {
+    atsScore?: number
     matchScore: number
     missingSkills: string[]
     suggestions: {
@@ -12,4 +13,5 @@ export type Feedback = {
         experience: ExperienceSuggestion[]
     }
     panelsAllowed?: string[]
+    panels_allowed?: string[]
 }

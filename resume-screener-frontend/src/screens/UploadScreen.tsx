@@ -32,6 +32,7 @@ export default function UploadScreen() {
 
         setTimeout(() => {
             setAiFeedback({
+                atsScore: 82,
                 matchScore: 72,
                 missingSkills: ['React', 'Node.js'],
                 suggestions: {

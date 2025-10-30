@@ -393,6 +393,7 @@ Render ATS/Match/Missing/Suggestions; **blur** non-entitled panels. Handle loadi
 
 * `/try`: ATS visible; others blurred with Upgrade CTA.
 * Pro route: all visible.
+* Most importantly I have already created UI for upload and there is AIFeedbackPanel which some how seems align with what is written above so make necessary changes if required like result card slots or upgrade overlay or whatever new components required. Otherwise, keep the changes if not required. 
 
 **DoD**
 

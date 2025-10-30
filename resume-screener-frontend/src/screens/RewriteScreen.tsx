@@ -33,6 +33,7 @@ export default function RewriteScreen() {
     }, [canViewMatch, canViewSuggestions])
 
     const dummySuggestions = useMemo(() => ({
+        atsScore: 85,
         matchScore: 72,
         missingSkills: ['React', 'Node.js'],
         suggestions: {
