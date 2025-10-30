@@ -10,10 +10,7 @@ type AiFeedbackPanelProps = {
     onUpgrade?: () => void
 }
 
-/**
- * @deprecated Prefer importing ResultsWidget directly. This wrapper is kept
- * temporarily to avoid churn in screens that already reference the panel.
- */
+// Prefer importing ResultsWidget directly. This wrapper remains for legacy usage.
 export default function AiFeedbackPanel({
     feedback,
     isLoading,
