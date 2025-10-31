@@ -33,6 +33,7 @@ function App() {
       <Route element={<AppShell />}>
         {/* 🌐 Public Landing */}
         <Route path="/" element={<LandingScreen />} />
+        <Route path="/try" element={<UploadScreen />} />
 
         {/* 🔐 Public-only Routes */}
         <Route

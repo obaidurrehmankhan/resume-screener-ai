@@ -8,9 +8,17 @@ import TextAreaInput from '@/components/shared/TextAreaInput'
 import AiFeedbackPanel from '@/components/shared/AiFeedbackPanel'
 import ResumeDropzone from '@/components/shared/ResumeDropdzone'
 import type { Feedback } from '@/types/feedback'
-import { selectEntitlements, selectHasEntitlement } from '@/features/auth/authSelectors'
+import { selectEntitlements, selectHasEntitlement, selectPlan } from '@/features/auth/authSelectors'
 import CheckScoreButton from '@/components/upload/CheckScoreButton'
 import { useJobTracking, useTrackedJobs } from '@/features/jobs/useJobTracking'
+import GuestRestoreBanner from '@/components/common/GuestRestoreBanner'
+import {
+    loadGuestDraftSnapshot,
+    storeGuestDraftSnapshot,
+    markGuestBannerDismissed,
+    isGuestBannerDismissed,
+    type GuestDraftSnapshot,
+} from '@/features/guest/guestStorage'
 
 export default function UploadScreen() {
     const navigate = useNavigate()
@@ -18,6 +26,9 @@ export default function UploadScreen() {
     const currentDraftId =
         (location.state as { draftId?: string } | undefined)?.draftId ?? null
     const isLoggedIn = useSelector((state: RootState) => Boolean(state.auth.user))
+    const plan = useSelector(selectPlan)
+    const isVisitor = plan === 'VISITOR'
+    const isTryRoute = location.pathname === '/try'
     const canViewMatch = useSelector((state: RootState) => selectHasEntitlement(state, 'MATCH_VIEW'))
     const canViewSuggestions = useSelector((state: RootState) => selectHasEntitlement(state, 'SUGGESTIONS_VIEW'))
     const entitlements = useSelector(selectEntitlements)
@@ -35,6 +46,8 @@ export default function UploadScreen() {
     const [isPanelLoading, setIsPanelLoading] = useState(false)
     const [lastJobId, setLastJobId] = useState<string | null>(null)
     const trackedJobs = useTrackedJobs()
+    const [guestDraftSnapshot, setGuestDraftSnapshot] = useState<GuestDraftSnapshot | null>(null)
+    const [showGuestBanner, setShowGuestBanner] = useState(false)
 
     useEffect(() => {
         if (!lastJobId) {
@@ -44,6 +57,21 @@ export default function UploadScreen() {
             }
         }
     }, [trackedJobs, lastJobId])
+
+    useEffect(() => {
+        if (!isVisitor || !isTryRoute) {
+            setShowGuestBanner(false)
+            return
+        }
+
+        const snapshot = loadGuestDraftSnapshot()
+        setGuestDraftSnapshot(snapshot)
+        if (snapshot && !isGuestBannerDismissed(snapshot.softRetainUntil)) {
+            setShowGuestBanner(true)
+        } else {
+            setShowGuestBanner(false)
+        }
+    }, [isTryRoute, isVisitor])
 
     const buildDemoFeedback = useCallback((): Feedback => ({
         atsScore: 82,
@@ -154,8 +182,22 @@ export default function UploadScreen() {
             if (nextFeedback) {
                 setAiFeedback(nextFeedback)
             }
+
+            if (isVisitor && isTryRoute) {
+                const snapshot = storeGuestDraftSnapshot({
+                    resumeText: typeof resume === 'string' ? resume : undefined,
+                    jobDescription,
+                    analysis: nextFeedback,
+                })
+                if (snapshot) {
+                    setGuestDraftSnapshot(snapshot)
+                    if (!isGuestBannerDismissed(snapshot.softRetainUntil)) {
+                        setShowGuestBanner(true)
+                    }
+                }
+            }
         },
-        [extractFeedbackFromResult],
+        [extractFeedbackFromResult, isTryRoute, isVisitor, jobDescription, resume],
     )
 
     const handleJobFailed = () => {
@@ -185,14 +227,60 @@ export default function UploadScreen() {
     }
 
     const handleDemoComplete = () => {
+        const feedback = buildDemoFeedback()
         setIsPanelLoading(false)
-        setAiFeedback(buildDemoFeedback())
+        setAiFeedback(feedback)
+
+        if (isVisitor && isTryRoute) {
+            const snapshot = storeGuestDraftSnapshot({
+                resumeText: typeof resume === 'string' ? resume : undefined,
+                jobDescription,
+                analysis: feedback,
+            })
+            if (snapshot) {
+                setGuestDraftSnapshot(snapshot)
+                if (!isGuestBannerDismissed(snapshot.softRetainUntil)) {
+                    setShowGuestBanner(true)
+                }
+            }
+        }
+    }
+
+    const handleRestoreGuestDraft = () => {
+        if (!guestDraftSnapshot) {
+            return
+        }
+
+        if (typeof guestDraftSnapshot.resumeText === 'string') {
+            setResume(guestDraftSnapshot.resumeText)
+        }
+        setJobDescription(guestDraftSnapshot.jobDescription ?? '')
+        setAiFeedback(guestDraftSnapshot.analysis ?? null)
+        setIsPanelLoading(false)
+        setShowGuestBanner(false)
+    }
+
+    const handleDismissGuestDraft = () => {
+        if (guestDraftSnapshot) {
+            markGuestBannerDismissed(guestDraftSnapshot.softRetainUntil)
+        }
+        setShowGuestBanner(false)
     }
 
     return (
         <div className="grid min-h-screen grid-cols-1 gap-6 bg-background p-6 md:grid-cols-2">
             {/* Left Panel */}
             <div className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-md">
+                {showGuestBanner && guestDraftSnapshot ? (
+                    <GuestRestoreBanner
+                        savedAt={guestDraftSnapshot.savedAt}
+                        retainUntil={guestDraftSnapshot.retainUntil}
+                        softRetainUntil={guestDraftSnapshot.softRetainUntil}
+                        onRestore={handleRestoreGuestDraft}
+                        onDismiss={handleDismissGuestDraft}
+                    />
+                ) : null}
+
                 <ResumeDropzone
                     value={typeof resume === 'string' ? resume : ''}
                     onChange={(val) => setResume(val)}

@@ -71,6 +71,7 @@ export function CheckScoreButton({
         const toastId = toast.loading('Working on your analysis (demo)…')
 
         setTimeout(() => {
+            onJobStarted?.({ jobId: DEMO_JOB_ID })
             onDemoComplete?.(DEMO_JOB_ID)
             toast.success('Result ready', {
                 id: toastId,
