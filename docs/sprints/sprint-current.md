@@ -566,7 +566,7 @@ Guarantee the “golden path” for this sprint stays green.
 * [D] P-110 Results Widget
 * [D] P-111 Analyze action
 * [D] P-112 Job tracking hook
-* [ ] P-113 Guest retention visuals
+* [D] P-113 Guest retention visuals
 * [ ] P-114 OWASP quick pass
 * [ ] P-115 Happy-path tests
 

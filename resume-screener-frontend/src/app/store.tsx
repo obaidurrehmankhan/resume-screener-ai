@@ -4,6 +4,7 @@ import { configureStore } from '@reduxjs/toolkit'
 // 🌐 RTK Query API definition — contains login, register, getMe, etc.
 import { authApi } from '@/features/auth/authApi'
 import { analysisApi } from '@/features/analysis/analysisApi'
+import { jobsApi } from '@/features/jobs/jobsApi'
 
 // 🔐 Auth slice — handles session user, plan, entitlements
 import authReducer from '@/features/auth/authSlice'
@@ -17,6 +18,7 @@ export const store = configureStore({
         // 👇 RTK Query's reducer for API caching & state (under 'authApi' key)
         [authApi.reducerPath]: authApi.reducer,
         [analysisApi.reducerPath]: analysisApi.reducer,
+        [jobsApi.reducerPath]: jobsApi.reducer,
 
         // 👇 Our custom auth reducer (holds session details)
         auth: authReducer,
@@ -27,7 +29,7 @@ export const store = configureStore({
         getDefaultMiddleware({
             serializableCheck: false,
             immutableCheck: false,
-        }).concat(authApi.middleware, analysisApi.middleware),
+        }).concat(authApi.middleware, analysisApi.middleware, jobsApi.middleware),
 })
 
 // 🔁 Enable automatic re-fetching on window focus or reconnect

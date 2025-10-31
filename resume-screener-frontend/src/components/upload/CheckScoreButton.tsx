@@ -8,10 +8,10 @@ type CheckScoreButtonProps = {
     resumeText: string
     jobDescription: string
     onStart?: () => void
-    onSettled?: () => void
-    onJobStarted?: (jobId: string) => void
+    onJobStarted?: (payload: { jobId: string; draftId?: string }) => void
     onDemoComplete?: (jobId: string) => void
     onViewJob?: (jobId: string) => void
+    onError?: () => void
 }
 
 const DEMO_JOB_ID = 'demo-job'
@@ -54,10 +54,10 @@ export function CheckScoreButton({
     resumeText,
     jobDescription,
     onStart,
-    onSettled,
     onJobStarted,
     onDemoComplete,
     onViewJob,
+    onError,
 }: CheckScoreButtonProps) {
     const [analyzeDraft, { isLoading }] = useAnalyzeDraftMutation()
 
@@ -71,7 +71,6 @@ export function CheckScoreButton({
         const toastId = toast.loading('Working on your analysis (demo)…')
 
         setTimeout(() => {
-            onJobStarted?.(DEMO_JOB_ID)
             onDemoComplete?.(DEMO_JOB_ID)
             toast.success('Result ready', {
                 id: toastId,
@@ -82,9 +81,8 @@ export function CheckScoreButton({
                     }
                     : undefined,
             })
-            onSettled?.()
         }, 800)
-    }, [onDemoComplete, onJobStarted, onSettled, onStart, onViewJob])
+    }, [onDemoComplete, onJobStarted, onStart, onViewJob])
 
     const handleClick = async () => {
         if (disabled) {
@@ -97,7 +95,6 @@ export function CheckScoreButton({
         }
 
         onStart?.()
-        const toastId = toast.loading('Working on your analysis…')
 
         try {
             const response = await analyzeDraft({
@@ -107,24 +104,12 @@ export function CheckScoreButton({
                 idempotencyKey: generateIdempotencyKey(),
             }).unwrap()
 
-            onJobStarted?.(response.jobId)
-
-            toast.success('Result ready', {
-                id: toastId,
-                action: onViewJob
-                    ? {
-                        label: 'View',
-                        onClick: () => onViewJob(response.jobId),
-                    }
-                    : undefined,
-            })
+            onJobStarted?.({ jobId: response.jobId, draftId })
         } catch (error) {
             toast.error('Unable to start analysis', {
-                id: toastId,
                 description: extractErrorMessage(error),
             })
-        } finally {
-            onSettled?.()
+            onError?.()
         }
     }
 

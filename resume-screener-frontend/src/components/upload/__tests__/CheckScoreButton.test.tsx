@@ -65,12 +65,16 @@ describe('CheckScoreButton', () => {
             unwrap: () => Promise.resolve({ jobId: 'job-123' }),
         })
 
+        const onJobStarted = vi.fn()
+
         await act(async () => {
             root.render(
                 <CheckScoreButton
                     draftId="draft-1"
                     resumeText="resume text"
                     jobDescription="job text"
+                    onJobStarted={onJobStarted}
+                    onError={vi.fn()}
                 />,
             )
         })
@@ -88,8 +92,12 @@ describe('CheckScoreButton', () => {
             jobDescription: 'job text',
             idempotencyKey: expect.any(String),
         })
-        expect(toastLoading).toHaveBeenCalled()
-        expect(toastSuccess).toHaveBeenCalled()
+        expect(toastLoading).not.toHaveBeenCalled()
+
+        expect(onJobStarted).toHaveBeenCalledWith({
+            jobId: 'job-123',
+            draftId: 'draft-1',
+        })
 
         await act(async () => {
             root.unmount()
