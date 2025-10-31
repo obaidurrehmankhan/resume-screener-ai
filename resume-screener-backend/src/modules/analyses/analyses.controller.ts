@@ -44,6 +44,9 @@ export class AnalysesController {
     status: 202,
     description: 'Analysis job enqueued',
   })
+  @ApiResponse({ status: 401, description: 'Authentication required when accessing a user draft.' })
+  @ApiResponse({ status: 403, description: 'Draft not accessible for current session.' })
+  @ApiResponse({ status: 404, description: 'Draft not found.' })
   async enqueueAnalysis(
     @Param('draftId', ParseUUIDPipe) draftId: string,
     @Body() body: RunAnalysisDto,

@@ -51,6 +51,9 @@ export class JobsController {
     status: 200,
     description: 'Returns job status and optional result payload',
   })
+  @ApiResponse({ status: 401, description: 'Authentication required when accessing a user job.' })
+  @ApiResponse({ status: 403, description: 'Job/result not accessible for the current session.' })
+  @ApiResponse({ status: 404, description: 'Job or related draft not found.' })
   async getJob(
     @Param('jobId', ParseUUIDPipe) jobId: string,
     @Req() req: Request & { user?: UserPayload | null; guestSessionId?: string; requestId?: string },

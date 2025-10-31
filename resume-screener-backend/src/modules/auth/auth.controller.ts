@@ -17,7 +17,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { UserRole } from '../../common/enums/user-role.enum';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UserPayload } from './types/user-payload';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Request, Response } from 'express';
@@ -35,6 +35,8 @@ export class AuthController {
     ) { }
 
     @Post('register')
+    @ApiOperation({ summary: 'Register a new user and begin an authenticated session' })
+    @ApiResponse({ status: 201, description: 'User registered and cookies set.' })
     async register(
         @Body() dto: RegisterDto,
         @Res({ passthrough: true }) res: Response,
@@ -46,6 +48,9 @@ export class AuthController {
 
     @Post('login')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Login and receive authenticated cookies' })
+    @ApiResponse({ status: 200, description: 'User authenticated and cookies set.' })
+    @ApiResponse({ status: 401, description: 'Invalid credentials.' })
     async login(
         @Body() dto: LoginDto,
         @Res({ passthrough: true }) res: Response,
@@ -57,6 +62,10 @@ export class AuthController {
 
     @Get('me')
     @UseGuards(JwtAuthGuard)
+    @ApiOperation({ summary: 'Get the authenticated user profile with plan and entitlements' })
+    @ApiResponse({ status: 200, description: 'Returns current authenticated user profile.' })
+    @ApiResponse({ status: 404, description: 'User not found.' })
+    @ApiResponse({ status: 401, description: 'Missing or invalid authentication.' })
     async getMe(@CurrentUser() user: UserPayload) {
         const profile = await this.authService.getMe(user.sub);
         if (!profile) {
@@ -72,6 +81,9 @@ export class AuthController {
 
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Refresh authentication cookies using the refresh token' })
+    @ApiResponse({ status: 200, description: 'New auth cookies issued.' })
+    @ApiResponse({ status: 401, description: 'Refresh token missing or invalid.' })
     async refresh(
         @Req() req: Request,
         @Res({ passthrough: true }) res: Response,
@@ -84,6 +96,8 @@ export class AuthController {
 
     @Post('logout')
     @HttpCode(HttpStatus.NO_CONTENT)
+    @ApiOperation({ summary: 'Clear authentication cookies and logout the user' })
+    @ApiResponse({ status: 204, description: 'Auth cookies cleared.' })
     async logout(@Res({ passthrough: true }) res: Response) {
         this.authService.clearAuthCookies(res);
     }
@@ -92,6 +106,9 @@ export class AuthController {
     @RequiresEntitlements(Entitlement.ADMIN_MANAGE_USERS)
     @Roles(UserRole.ADMIN)
     @Post('create-admin')
+    @ApiOperation({ summary: 'Create a new admin user (admin only)' })
+    @ApiResponse({ status: 201, description: 'Admin user created.' })
+    @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role and entitlement.' })
     createAdmin(@Body() dto: RegisterDto, @CurrentUser() user: UserPayload) {
         return this.authService.createAdmin(dto, user);
     }
